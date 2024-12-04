@@ -474,7 +474,7 @@ def initUsers():
         u2 = User(name='Grace Hopper', uid=app.config['DEFAULT_USER'], password=app.config['DEFAULT_PASSWORD'], pfp='hop.png')
         u3 = User(name='Nicholas Tesla', uid='niko', password='123niko', pfp='niko.png' )
         u4 = User(name='Xavier Thompson', uid="xat", password='123xat', pfp='xat.png')
-        u5 = User(name= 'Armaghan Zarak', uid= 'Armaghanz', password='123', pfp='niko.png'role="Adimin")
+        u5 = User(name='Armaghan Zarak', uid= 'Armaghanz', password='123', pfp='niko.png', role="Adimin")
         users = [u1, u2, u3, u4, u5]
         
         for user in users:
