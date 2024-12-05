@@ -11,7 +11,6 @@ from werkzeug.security import generate_password_hash
 import shutil
 
 
-
 # import "objects" from "this" project
 from __init__ import app, db, login_manager  # Key Flask objects 
 # API endpoints
@@ -146,6 +145,12 @@ def reset_password(user_id):
     if user.update({"password": app.config['DEFAULT_PASSWORD']}):
         return jsonify({'message': 'Password reset successfully'}), 200
     return jsonify({'error': 'Password reset failed'}), 500
+
+@app.route('/api/id', methods=['GET'])
+def get_id():
+    return jsonify({"message": "API is working!"})
+
+
 
 # Create an AppGroup for custom commands
 custom_cli = AppGroup('custom', help='Custom commands')
