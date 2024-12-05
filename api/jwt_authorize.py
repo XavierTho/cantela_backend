@@ -78,4 +78,3 @@ def token_required(roles=None):
             return func_to_guard(*args, **kwargs)
         return decorated
     return decorator
-bb
