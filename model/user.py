@@ -295,7 +295,6 @@ class User(db.Model, UserMixin):
         """
         self._pfp = pfp
 
-
     def create(self, inputs=None):
         """
         Adds a new record to the table and commits the transaction.
@@ -329,7 +328,6 @@ class User(db.Model, UserMixin):
             "name": self.name,
             "email": self.email,
             "role": self._role,
-            "pfp": self._pfp
         }
         return data
         
@@ -411,7 +409,6 @@ class User(db.Model, UserMixin):
         self.pfp = None
         db.session.commit()
         
-        
     def set_uid(self, new_uid=None):
         """
         Updates the user's directory based on the new UID provided.
@@ -474,8 +471,10 @@ def initUsers():
         
         u1 = User(name='Thomas Edison', uid=app.config['ADMIN_USER'], password=app.config['ADMIN_PASSWORD'], pfp='toby.png', role="Admin")
         u2 = User(name='Grace Hopper', uid=app.config['DEFAULT_USER'], password=app.config['DEFAULT_PASSWORD'], pfp='hop.png')
-        u3 = User(name='Nicholas Tesla', uid='niko', password='123niko', pfp='niko.png' )
-        users = [u1, u2, u3]
+        u3 = User(name='Nicholas Tesla', uid='niko', password='123niko', pfp='niko.png')
+        u4 = User(name='Xavier Thompson', uid="xat", password='123xat', pfp='xat.png')
+        u5 = User(name='Armaghan Zarak', uid="az", password='123', pfp='niko.png', role='Admin')
+        users = [u1, u2, u3, u4, u5]
         
         for user in users:
             try:
