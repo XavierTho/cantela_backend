@@ -328,7 +328,6 @@ class User(db.Model, UserMixin):
             "name": self.name,
             "email": self.email,
             "role": self._role,
-            "pfp": self._pfp,
         }
         return data
         
