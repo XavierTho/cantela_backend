@@ -48,8 +48,6 @@ app.register_blueprint(nestPost_api)
 app.register_blueprint(nestImg_api)
 app.register_blueprint(vote_api)
 
-## need to add blueprint for student.py
-
 # Tell Flask-Login the view function name of your login route
 login_manager.login_view = "login"
 
@@ -142,6 +140,12 @@ def reset_password(user_id):
     if user.update({"password": app.config['DEFAULT_PASSWORD']}):
         return jsonify({'message': 'Password reset successfully'}), 200
     return jsonify({'error': 'Password reset failed'}), 500
+
+@app.route('/api/id', methods=['GET'])
+def get_id():
+    return jsonify({"message": "API is working!"})
+
+
 
 # Create an AppGroup for custom commands
 custom_cli = AppGroup('custom', help='Custom commands')
