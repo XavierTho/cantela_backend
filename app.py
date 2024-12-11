@@ -13,6 +13,14 @@ def get_data():
     # start a list, to be used like a information database
     InfoDb = []
 
+    InfoDb.append({
+        "FirstName": "Zafeer",
+        "LastName": "Ahmed",
+        "DOB": "January 11",
+        "Residence": "San Diego",
+        "Email": "zafeer10ahmed@gmail.com",
+        "Owns_Cars": ["Tesla Model 3"]
+    })
     # add a row to list, an Info record
     InfoDb.append({
         "FirstName": "Arush",
