@@ -13,6 +13,14 @@ def get_data():
     # start a list, to be used like a information database
     InfoDb = []
 
+    InfoDb.append({
+        "FirstName": "Zafeer",
+        "LastName": "Ahmed",
+        "DOB": "January 11",
+        "Residence": "San Diego",
+        "Email": "zafeer10ahmed@gmail.com",
+        "Owns_Cars": ["Tesla Model 3"]
+    })
     # add a row to list, an Info record
     InfoDb.append({
         "FirstName": "Arush",
@@ -53,15 +61,6 @@ def get_data():
         "Owns_Vehicles": ["2015-scooter", "Half-a-bike", "2013-Honda-Pilot", "The-other-half-of-the-bike"]
     })
     
-        # add a row to list, an Info record
-    InfoDb.append({
-        "FirstName": "jackson",
-        "LastName": "patrick",
-        "DOB": "May 12",
-        "Residence": "San Diego",
-        "Email": "patwick.jackson@gmail.com",
-        "FavoriteFood": ["Ramen"]
-    })
     return jsonify(InfoDb)
 
 # add an HTML endpoint to flask app
