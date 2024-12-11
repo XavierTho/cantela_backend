@@ -91,13 +91,13 @@ def get_jackson():
             "Hobbies": ["Sports"]
         },
         {
-            "FirstName": "Albert",
-            "LastName": "Einstein",
-            "DOB": "March 14, 1879",
-            "Residence": "Princeton, NJ",
-            "Email": "albert.einstein@relativity.com",
-            "Favorite_Food": ["Spaghetti"],
-            "Hobbies": ["Sailing", "Violin"]
+            "FirstName": "Arush",
+            "LastName": "Shah",
+            "DOB": "December 20",
+            "Residence": "San Diego",
+            "Email": "emailarushshah@gmail.com",
+            "Favorite_Food": ["Vodka Pasta"],
+            "Hobbies": ["Art", "Guitar"]
         },
         {
             "FirstName": "Marie",
@@ -136,13 +136,13 @@ def render_jackson_html():
             "Hobbies": ["Sports"]
         },
         {
-            "FirstName": "Albert",
-            "LastName": "Einstein",
-            "DOB": "March 14, 1879",
-            "Residence": "Princeton, NJ",
-            "Email": "albert.einstein@relativity.com",
-            "Favorite_Food": ["Spaghetti"],
-            "Hobbies": ["Sailing", "Violin"]
+            "FirstName": "Arush",
+            "LastName": "Shah",
+            "DOB": "December 20",
+            "Residence": "San Diego",
+            "Email": "emailarushshah@gmail.com",
+            "Favorite_Food": ["Vodka Pasta"],
+            "Hobbies": ["Art", "Guitar"]
         },
         {
             "FirstName": "Marie",
