@@ -17,12 +17,12 @@ def get_data():
 
     # add a row to list, an Info record
     InfoDb.append({
-        "FirstName": "John",
-        "LastName": "Mortensen",
-        "DOB": "October 21",
+        "FirstName": "Nolan",
+        "LastName": "Yu",
+        "DOB": "October 7",
         "Residence": "San Diego",
-        "Email": "jmortensen@powayusd.com",
-        "Owns_Cars": ["2015-Fusion", "2011-Ranger", "2003-Excursion", "1997-F350", "1969-Cadillac"]
+        "Email": "nolanyu2@gmail.com",
+        "Favorite Hobbies": ["Watching Movies, Playing Soccer"]
     })
 
     # add a row to list, an Info record
