@@ -5,76 +5,65 @@ import jwt
 from model.user import User
 
 def token_required(roles=None):
-    """
-    Guard API endpoints that require authentication.
-
-    This function performs the following steps:
-    
-    1. Checks for the presence of a valid JWT token in the request cookie.
-    2. Decodes the token and retrieves the user data.
-    3. Checks if the user data is found in the database.
-    4. Checks if the user has the required role.
-    5. Sets the current_user in the global context (Flask's g object).
-    6. Returns the decorated function if all checks pass.
-
-    Possible error responses:
-    
-    - 401 / Unauthorized: token is missing or invalid.
-    - 403 / Forbidden: user has insufficient permissions.
-    - 500 / Internal Server Error: something went wrong with the token decoding.
-
-    Args:
-        roles (list, optional): A list of roles that are allowed to access the endpoint. Defaults to None.
-
-    Returns:
-        function: The decorated function if all checks pass.
-    """
     def decorator(func_to_guard):
         @wraps(func_to_guard)
         def decorated(*args, **kwargs):
+            # Check for the token in cookies
             token = request.cookies.get(current_app.config["JWT_TOKEN_NAME"])
             if not token:
+                print("Token is missing")  # Debugging log
                 return {
                     "message": "Token is missing",
                     "error": "Unauthorized"
                 }, 401
 
             try:
+                # Decode the token
                 data = jwt.decode(token, current_app.config["SECRET_KEY"], algorithms=["HS256"])
+                print(f"Decoded Token: {data}")  # Debugging log
+
+                # Find the user in the database
                 current_user = User.query.filter_by(_uid=data["_uid"]).first()
                 if not current_user:
+                    print("User not found in database")  # Debugging log
                     return {
                         "message": "User not found",
                         "error": "Unauthorized",
                         "data": data
                     }, 401
 
+                # Check roles if specified
                 if roles and current_user.role not in roles:
+                    print(f"User does not have required role: {current_user.role}")  # Debugging log
                     return {
                         "message": "User does not have the required role",
                         "error": "Forbidden",
                         "data": data
                     }, 403
-                    
-                # Authentication succes, set the current_user in the global context (Flask's g object)
+
+                # Set the authenticated user
                 g.current_user = current_user
+                print(f"Authenticated User: {current_user._uid}, Role: {current_user.role}")  # Debugging log
             except jwt.ExpiredSignatureError:
+                print("Token has expired")  # Debugging log
                 return {
                     "message": "Token has expired",
                     "error": "Unauthorized"
                 }, 401
             except jwt.InvalidTokenError:
+                print("Invalid token")  # Debugging log
                 return {
                     "message": "Invalid token",
                     "error": "Unauthorized"
                 }, 401
             except Exception as e:
+                print(f"Unexpected error: {e}")  # Debugging log
                 return {
                     "message": "An error occurred",
                     "error": str(e)
                 }, 500
 
-            # Call back to the guarded function if all checks pass
+            # Call the protected function
             return func_to_guard(*args, **kwargs)
         return decorated
     return decorator
