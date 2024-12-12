@@ -211,6 +211,7 @@ def initChannels():
         beverage_debates = Group.query.filter_by(_name='Beverage Debates').first()
         nfl_goats = Group.query.filter_by(_name='NFL GOATs').first()
         car_debates = Group.query.filter_by(_name='Car Debates').first()
+        flashcards = Group.query.filter_by(_name='Flashcards').first()
         vote_for_the_goat_channels = [
             Channel(name='Milk vs Cereal', group_id=internet_debates.id),
             Channel(name='Hot Dog Sandwich', group_id=internet_debates.id),
@@ -236,6 +237,7 @@ def initChannels():
             Channel(name='Defensive Players', group_id=nfl_goats.id),
             Channel(name='NFL Divisions', group_id=nfl_goats.id),
             Channel(name='Gift Cards', group_id=dnero_store.id),
+            Channel(name='Flashcards', group_id=flashcards.id),
         ]
         
         # P5 Channels: 
@@ -249,6 +251,12 @@ def initChannels():
             Channel(name='Combos', group_id=flavor_fusion.id),
         ]
         
+        # Cantella Channels:
+        cantella = Group.query.filter_by(_name='Cantella').first()
+        home_page_channels = [
+            Channel(name='Home', group_id=cantella.id),
+            Channel(name='Flashcards', group_id=flashcards.id),
+        ]
         
         channels = home_page_channels + shared_interest_channels + vote_for_the_goat_channels + rate_and_relate_channels
         for channel in channels:
