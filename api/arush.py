@@ -6,7 +6,7 @@ app = Flask(__name__)
 CORS(app, supports_credentials=True, origins='*')  # Allow all origins (*)
 
 # add an api endpoint to flask app
-@app.route('/api/zafeer', methods=['GET'])
+@app.route('/api/arush', methods=['GET'])
 def get_data():
     def get_id():
         return jsonify({InfoDb})
