@@ -150,8 +150,9 @@ def initNestPosts():
         p2 = NestPost(title='Game Day', content='Who is coming to the game?', user_id=2, group_id=2, image_url="toby2.png")
         p3 = NestPost(title='New Releases', content='What movies are you excited for?', user_id=3, group_id=3, image_url="toby3.png")
         p4 = NestPost(title='Study Group', content='Meeting at the library.', user_id=1, group_id=1, image_url="toby4.png")
+        p5 = NestPost(title='Cantella', content='Cantella Project', user_id=1, group_id=1, image_url="toby5.png")
         
-        for post in [p1, p2, p3, p4]:
+        for post in [p1, p2, p3, p4, p5]:
             try:
                 post.create()
                 print(f"Record created: {repr(post)}")
