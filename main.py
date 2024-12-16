@@ -25,6 +25,9 @@ from api.group import group_api
 from api.section import section_api
 from api.nestPost import nestPost_api # Justin added this, custom format for his website
 from api.messages_api import messages_api # Adi added this, messages for his website
+from api.flashcard import flashcard_api
+
+
 
 from api.vote import vote_api
 # database Initialization functions
@@ -35,6 +38,8 @@ from model.channel import Channel, initChannels
 from model.post import Post, initPosts
 from model.nestPost import NestPost, initNestPosts # Justin added this, custom format for his website
 from model.vote import Vote, initVotes
+from model.flashcard import initFlashcards
+
 # server only Views
 
 # register URIs for api endpoints
@@ -49,6 +54,9 @@ app.register_blueprint(section_api)
 app.register_blueprint(nestPost_api)
 app.register_blueprint(nestImg_api)
 app.register_blueprint(vote_api)
+app.register_blueprint(flashcard_api)
+
+## need to add blueprint for student.py
 
 # Tell Flask-Login the view function name of your login route
 login_manager.login_view = "login"
@@ -162,6 +170,7 @@ def generate_data():
     initPosts()
     initNestPosts()
     initVotes()
+    initFlashcards()
     
 # Backup the old database
 def backup_database(db_uri, backup_uri):
@@ -246,5 +255,8 @@ def ai_homework_help():
         
 # this runs the flask application on the development server
 if __name__ == "__main__":
-    # change name for testing
+    with app.app_context():
+        initFlashcards()  # Make sure this line is included to create the tables
     app.run(debug=True, host="0.0.0.0", port="8887")
+
+
