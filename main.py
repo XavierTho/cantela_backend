@@ -1,4 +1,6 @@
 # imports from flask
+import google.generativeai as genai
+import requests
 import json
 import os
 from urllib.parse import urljoin, urlparse
@@ -234,6 +236,22 @@ def restore_data_command():
     
 # Register the custom command group with the Flask application
 app.cli.add_command(custom_cli)
+
+genai.configure(api_key="AIzaSyCc3BTu2941MRM_lAZZmvxWND5eDs3mCpk")
+model = genai.GenerativeModel('gemini-pro')
+@app.route('/api/ai/help', methods=['POST'])
+def ai_homework_help():
+    data = request.get_json()
+    question = data.get("question", "")
+    if not question:
+        return jsonify({"error": "No question provided."}), 400
+    try:
+        response = model.generate_content(f"Your name is CanTeach you are a homework help ai chat bot with the sole purpose of answering homework related questions, under any circumstances don't answer any non-homework related questions. \nHere is your prompt: {question}")
+        return jsonify({"response": response.text}), 200
+    except Exception as e:
+        print("error!")
+        print(e)
+        return jsonify({"error": str(e)}), 500
         
 # this runs the flask application on the development server
 if __name__ == "__main__":
