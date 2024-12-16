@@ -40,6 +40,19 @@ from model.nestPost import NestPost, initNestPosts # Justin added this, custom f
 from model.vote import Vote, initVotes
 from model.flashcard import initFlashcards
 
+
+from flask import Flask
+from flask_cors import CORS
+
+app = Flask(__name__)
+# Allow CORS for your frontend URL
+CORS(app, resources={r"/*": {"origins": "https://xaviertho.github.io"}})
+
+# ...existing code...
+
+if __name__ == "__main__":
+    app.run()
+    
 # server only Views
 
 # register URIs for api endpoints
