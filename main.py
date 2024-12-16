@@ -38,8 +38,7 @@ from model.nestPost import NestPost, initNestPosts
 from model.vote import Vote, initVotes
 from model.flashcard import initFlashcards
 
-# Enable CORS
-CORS(app, resources={r"/*": {"origins": "https://xaviertho.github.io"}})
+# server only Views
 
 # register URIs for API endpoints
 app.register_blueprint(messages_api)
