@@ -4,59 +4,54 @@ import requests
 import json
 import os
 from urllib.parse import urljoin, urlparse
-from flask import abort, redirect, render_template, request, send_from_directory, url_for, jsonify  # import render_template from "public" flask libraries
+from flask import abort, redirect, render_template, request, send_from_directory, url_for, jsonify
 from flask_login import current_user, login_user, logout_user
 from flask.cli import AppGroup
 from flask_login import current_user, login_required
 from flask import current_app
 from werkzeug.security import generate_password_hash
 import shutil
-
+from flask_cors import CORS  # Import CORS
 
 # import "objects" from "this" project
 from __init__ import app, db, login_manager  # Key Flask objects 
 # API endpoints
 from api.user import user_api 
 from api.pfp import pfp_api
-from api.nestImg import nestImg_api # Justin added this, custom format for his website
+from api.nestImg import nestImg_api  # Custom format
 from api.post import post_api
 from api.channel import channel_api
 from api.group import group_api
 from api.section import section_api
-from api.nestPost import nestPost_api # Justin added this, custom format for his website
-from api.messages_api import messages_api # Adi added this, messages for his website
+from api.nestPost import nestPost_api  # Custom format
+from api.messages_api import messages_api  # Messages
 from api.flashcard import flashcard_api
-
-
-
 from api.vote import vote_api
+
 # database Initialization functions
 from model.user import User, initUsers
 from model.section import Section, initSections
 from model.group import Group, initGroups
 from model.channel import Channel, initChannels
 from model.post import Post, initPosts
-from model.nestPost import NestPost, initNestPosts # Justin added this, custom format for his website
+from model.nestPost import NestPost, initNestPosts
 from model.vote import Vote, initVotes
 from model.flashcard import initFlashcards
 
 # server only Views
 
-# register URIs for api endpoints
-app.register_blueprint(messages_api) # Adi added this, messages for his website
+# register URIs for API endpoints
+app.register_blueprint(messages_api)
 app.register_blueprint(user_api)
 app.register_blueprint(pfp_api) 
 app.register_blueprint(post_api)
 app.register_blueprint(channel_api)
 app.register_blueprint(group_api)
 app.register_blueprint(section_api)
-# Added new files to create nestPosts, uses a different format than Mortensen and didn't want to touch his junk
 app.register_blueprint(nestPost_api)
 app.register_blueprint(nestImg_api)
 app.register_blueprint(vote_api)
 app.register_blueprint(flashcard_api)
-
-## need to add blueprint for student.py
 
 # Tell Flask-Login the view function name of your login route
 login_manager.login_view = "login"
@@ -65,7 +60,6 @@ login_manager.login_view = "login"
 def unauthorized_callback():
     return redirect(url_for('login', next=request.path))
 
-# register URIs for server pages
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
@@ -94,18 +88,17 @@ def login():
         else:
             error = 'Invalid username or password.'
     return render_template("login.html", error=error, next=next_page)
-    
+
 @app.route('/logout')
 def logout():
     logout_user()
     return redirect(url_for('index'))
 
-@app.errorhandler(404)  # catch for URL not found
+@app.errorhandler(404)
 def page_not_found(e):
-    # note that we set the 404 status explicitly
     return render_template('404.html'), 404
 
-@app.route('/')  # connects default URL to index() function
+@app.route('/')
 def index():
     print("Home:", current_user)
     return render_template("index.html")
@@ -122,11 +115,10 @@ def u2table():
     users = User.query.all()
     return render_template("u2table.html", user_data=users)
 
-# Helper function to extract uploads for a user (ie PFP image)
 @app.route('/uploads/<path:filename>')
 def uploaded_file(filename):
     return send_from_directory(current_app.config['UPLOAD_FOLDER'], filename)
- 
+
 @app.route('/users/delete/<int:user_id>', methods=['DELETE'])
 @login_required
 def delete_user(user_id):
@@ -146,7 +138,6 @@ def reset_password(user_id):
     if not user:
         return jsonify({'error': 'User not found'}), 404
 
-    # Set the new password
     if user.update({"password": app.config['DEFAULT_PASSWORD']}):
         return jsonify({'message': 'Password reset successfully'}), 200
     return jsonify({'error': 'Password reset failed'}), 500
@@ -155,12 +146,9 @@ def reset_password(user_id):
 def get_id():
     return jsonify({"message": "API is working!"})
 
-
-
-# Create an AppGroup for custom commands
+# Custom CLI Commands
 custom_cli = AppGroup('custom', help='Custom commands')
 
-# Define a command to run the data generation functions
 @custom_cli.command('generate_data')
 def generate_data():
     initUsers()
@@ -171,10 +159,8 @@ def generate_data():
     initNestPosts()
     initVotes()
     initFlashcards()
-    
-# Backup the old database
+
 def backup_database(db_uri, backup_uri):
-    """Backup the current database."""
     if backup_uri:
         db_path = db_uri.replace('sqlite:///', 'instance/')
         backup_path = backup_uri.replace('sqlite:///', 'instance/')
@@ -183,7 +169,6 @@ def backup_database(db_uri, backup_uri):
     else:
         print("Backup not supported for production database.")
 
-# Extract data from the existing database
 def extract_data():
     data = {}
     with app.app_context():
@@ -194,7 +179,6 @@ def extract_data():
         data['posts'] = [post.read() for post in Post.query.all()]
     return data
 
-# Save extracted data to JSON files
 def save_data_to_json(data, directory='backup'):
     if not os.path.exists(directory):
         os.makedirs(directory)
@@ -203,7 +187,6 @@ def save_data_to_json(data, directory='backup'):
             json.dump(records, f)
     print(f"Data backed up to {directory} directory.")
 
-# Load data from JSON files
 def load_data_from_json(directory='backup'):
     data = {}
     for table in ['users', 'sections', 'groups', 'channels', 'posts']:
@@ -211,7 +194,6 @@ def load_data_from_json(directory='backup'):
             data[table] = json.load(f)
     return data
 
-# Restore data to the new database
 def restore_data(data):
     with app.app_context():
         users = User.restore(data['users'])
@@ -221,24 +203,28 @@ def restore_data(data):
         _ = Post.restore(data['posts'])
     print("Data restored to the new database.")
 
-# Define a command to backup data
 @custom_cli.command('backup_data')
 def backup_data():
     data = extract_data()
     save_data_to_json(data)
     backup_database(app.config['SQLALCHEMY_DATABASE_URI'], app.config['SQLALCHEMY_BACKUP_URI'])
 
-# Define a command to restore data
 @custom_cli.command('restore_data')
 def restore_data_command():
     data = load_data_from_json()
     restore_data(data)
-    
-# Register the custom command group with the Flask application
+
 app.cli.add_command(custom_cli)
+
 
 # genai.configure(api_key="AIzaSyCc3BTu2941MRM_lAZZmvxWND5eDs3mCpk")
 # model = genai.GenerativeModel('gemini-pro')
+=======
+# AI Homework Help Endpoint
+genai.configure(api_key="AIzaSyCc3BTu2941MRM_lAZZmvxWND5eDs3mCpk")
+model = genai.GenerativeModel('gemini-pro')
+
+
 @app.route('/api/ai/help', methods=['POST'])
 def ai_homework_help():
     data = request.get_json()
@@ -246,17 +232,17 @@ def ai_homework_help():
     if not question:
         return jsonify({"error": "No question provided."}), 400
     try:
-        response = model.generate_content(f"Your name is CanTeach you are a homework help ai chat bot with the sole purpose of answering homework related questions, under any circumstances don't answer any non-homework related questions. \nHere is your prompt: {question}")
+        response = model.generate_content(
+            f"Your name is CanTeach. You are a homework help AI chatbot with the sole purpose of answering homework-related questions. "
+            f"Under any circumstances, don't answer non-homework-related questions.\n"
+            f"Here is your prompt: {question}"
+        )
         return jsonify({"response": response.text}), 200
     except Exception as e:
-        print("error!")
-        print(e)
+        print("Error:", e)
         return jsonify({"error": str(e)}), 500
-        
-# this runs the flask application on the development server
+
 if __name__ == "__main__":
     with app.app_context():
-        initFlashcards()  # Make sure this line is included to create the tables
+        initFlashcards()
     app.run(debug=True, host="0.0.0.0", port="8887")
-
-
