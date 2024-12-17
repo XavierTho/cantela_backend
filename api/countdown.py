@@ -95,3 +95,9 @@ def render_schedule_html():
 # ========================
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5013, debug=True)
+
+
+
+
+### http://localhost:5013/html/schedule
+### http://127.0.0.1:5013/html/schedule
