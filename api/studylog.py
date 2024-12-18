@@ -15,6 +15,8 @@ class StudylogAPI:
             current_user = g.current_user
             data = request.get_json()
 
+
+
             # Validate input
             if not data or 'subject' not in data or 'hours' not in data:
                 return {"message": "Subject and hours are required"}, 400
