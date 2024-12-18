@@ -27,9 +27,10 @@ from api.nestPost import nestPost_api  # Custom format
 from api.messages_api import messages_api  # Messages
 from api.flashcard import flashcard_api
 from api.vote import vote_api
+from api.studylog import studylog_api
 
 # database Initialization functions
-from model.user import User, initUsers
+from model.user import studylog, User, initUsers
 from model.section import Section, initSections
 from model.group import Group, initGroups
 from model.channel import Channel, initChannels
@@ -37,6 +38,7 @@ from model.post import Post, initPosts
 from model.nestPost import NestPost, initNestPosts
 from model.vote import Vote, initVotes
 from model.flashcard import initFlashcards
+from model.studylog import initStudyLog
 
 # server only Views
 
@@ -52,6 +54,7 @@ app.register_blueprint(nestPost_api)
 app.register_blueprint(nestImg_api)
 app.register_blueprint(vote_api)
 app.register_blueprint(flashcard_api)
+app.register_blueprint(studylog_api)
 
 # Tell Flask-Login the view function name of your login route
 login_manager.login_view = "login"
@@ -91,8 +94,37 @@ def login():
 
 @app.route('/logout')
 def logout():
-    logout_user()
-    return redirect(url_for('index'))
+    # Your existing logout logic here
+    pass
+
+# New routes for study tracker
+@app.route('/api/study-tracker/log', methods=['POST'])
+def log_study_session():
+    try:
+        data = request.json
+        new_log = studylog(
+            user_id=data['user_id'],
+            subject=data['subject'],
+            hours_studied=data['hours'],
+            notes=data.get('notes', '')
+        )
+        db.session.add(new_log)
+        db.session.commit()
+        return jsonify({'message': 'Study session logged successfully'}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/study-tracker/progress/<int:user_id>', methods=['GET'])
+def get_study_progress(user_id):
+    try:
+        logs = studylog.query.filter_by(user_id=user_id).all()
+        data = [
+            {'subject': log.subject, 'hours': log.hours_studied, 'date': log.date.strftime('%Y-%m-%d')}
+            for log in logs
+        ]
+        return jsonify(data), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @app.errorhandler(404)
 def page_not_found(e):
@@ -159,6 +191,7 @@ def generate_data():
     initNestPosts()
     initVotes()
     initFlashcards()
+    initstudylog()
 
 def backup_database(db_uri, backup_uri):
     if backup_uri:
@@ -240,4 +273,5 @@ def ai_homework_help():
 if __name__ == "__main__":
     with app.app_context():
         initFlashcards()
+        initStudyLog()
     app.run(debug=True, host="0.0.0.0", port="8887")
