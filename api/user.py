@@ -10,7 +10,6 @@ from model.user import User
 user_api = Blueprint('user_api', __name__, url_prefix='/api')
 
 # Create an Api object and associate it with the Blueprint
-# API docs: https://flask-restful.readthedocs.io/en/latest/api.html
 api = Api(user_api)
 
 class UserAPI:
@@ -148,6 +147,22 @@ class UserAPI:
             user.delete()
             return f"Deleted user: {json}", 204  # use 200 to test with Postman
 
+    class _LEADERBOARD(Resource):
+        """
+        Leaderboard API to retrieve top users by score.
+        """
+        # @token_required()
+        def get(self):
+            """
+            Retrieve top 10 users sorted by score.
+            """
+            users = User.query.order_by(User._score.desc()).limit(10).all()
+            leaderboard = [
+                {"name": user.name, "uid": user.uid, "score": user.score}
+                for user in users
+            ]
+            return jsonify({"leaderboard": leaderboard})
+
     class _Security(Resource):
         """
         Security-related API operations.
@@ -194,7 +209,7 @@ class UserAPI:
                     secure=True,
                     httponly=True,
                     path='/',
-                    samesite='None'  # This is the key part for cross-site requests
+                    samesite='None'
                 )
                 return resp
             except Exception as e:
@@ -210,19 +225,16 @@ class UserAPI:
             """
             current_user = g.current_user
             try:
-                # Generate a token with practically 0 age
                 token = jwt.encode(
                     {"_uid": current_user._uid, "exp": datetime.utcnow()},
                     current_app.config["SECRET_KEY"],
                     algorithm="HS256"
                 )
-
-                # Prepare a response indicating the token has been invalidated
                 resp = Response("Token invalidated successfully")
                 resp.set_cookie(
                     current_app.config["JWT_TOKEN_NAME"],
                     token,
-                    max_age=0,  # Immediately expire the cookie
+                    max_age=0,
                     secure=True,
                     httponly=True,
                     path='/',
@@ -230,20 +242,17 @@ class UserAPI:
                 )
                 return resp
             except Exception as e:
-                return {
-                    "message": "Failed to invalidate token",
-                    "error": str(e)
-                }, 500
+                return {"message": "Failed to invalidate token", "error": str(e)}, 500
+
     class _ID(Resource):  # Individual identification API operation
         @token_required()
         def get(self):
-            ''' Retrieve the current user from the token_required authentication check '''
             current_user = g.current_user
-            ''' Return the current user as a json object '''
             return jsonify(current_user.read())
 
 # Register the API resources with the Blueprint
 api.add_resource(UserAPI._ID, '/id')
 api.add_resource(UserAPI._BULK_CRUD, '/users')
 api.add_resource(UserAPI._CRUD, '/user')
+api.add_resource(UserAPI._LEADERBOARD, '/leaderboard')  # NEW Leaderboard endpoint
 api.add_resource(UserAPI._Security, '/authenticate')
