@@ -379,23 +379,23 @@ class User(db.Model, UserMixin):
             db.session.rollback()
             return None
 
-    def read(self):
-        """
-        Converts the user object to a dictionary.
-        
-        Returns:
-            dict: A dictionary representation of the user object.
-        """
-        data = {
-            "id": self.id,
-            "uid": self.uid,
-            "name": self.name,
-            "email": self.email,
-            "role": self._role,
-            "score": self._score
-            "joined_classes": self.get_classes()
-        }
-        return data
+def read(self):
+    """
+    Converts the user object to a dictionary.
+
+    Returns:
+        dict: A dictionary representation of the user object.
+    """
+    data = {
+        "id": self.id,
+        "uid": self.uid,
+        "name": self.name,
+        "email": self.email,
+        "role": self._role,
+        "score": self._score,  # Missing comma added here
+        "joined_classes": self.get_classes()
+    }
+    return data
         
     def update(self, inputs):
         """
