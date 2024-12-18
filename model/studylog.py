@@ -16,6 +16,7 @@ class StudyLog(db.Model):
     """
     __tablename__ = 'study_logs'
 
+
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     subject = db.Column(db.String(100), nullable=False)
