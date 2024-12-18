@@ -91,16 +91,13 @@ class User(db.Model, UserMixin):
     _password = db.Column(db.String(255), unique=False, nullable=False)
     _role = db.Column(db.String(20), default="User", nullable=False)
     _pfp = db.Column(db.String(255), unique=False, nullable=True)
-    _score = db.Column(db.Integer, default=0, nullable=False)  # NEW score column
-
 
     # Many-to-Many Relationship with Classes
     joined_classes = db.relationship('Class', secondary=user_classes, backref='students', lazy='dynamic')
 
     posts = db.relationship('Post', backref='author', lazy=True)
-                                 
-    
-    def __init__(self, name, uid, password="", role="User", pfp='', email='?', score=0):
+
+    def __init__(self, name, uid, password="", role="User", pfp='', email='?'):
         """
         Constructor, 1st step in object creation.
         
@@ -117,7 +114,6 @@ class User(db.Model, UserMixin):
         self.set_password(password)
         self._role = role
         self._pfp = pfp
-        self.score = score
 
     # UserMixin/Flask-Login requires a get_id method to return the id as a string
     def get_id(self):
@@ -161,14 +157,8 @@ class User(db.Model, UserMixin):
             bool: True if the user is anonymous, False otherwise.
         """
         return False
-    @property
-    def score(self):
-        return self._score
 
-    @score.setter
-    def score(self, score):
-        if isinstance(score, int) and score >= 0:
-            self._score = score
+    # Properties and Setters
     @property
     def email(self):
         """
@@ -379,23 +369,22 @@ class User(db.Model, UserMixin):
             db.session.rollback()
             return None
 
-def read(self):
-    """
-    Converts the user object to a dictionary.
-
-    Returns:
-        dict: A dictionary representation of the user object.
-    """
-    data = {
-        "id": self.id,
-        "uid": self.uid,
-        "name": self.name,
-        "email": self.email,
-        "role": self._role,
-        "score": self._score,  # Missing comma added here
-        "joined_classes": self.get_classes()
-    }
-    return data
+    def read(self):
+        """
+        Converts the user object to a dictionary.
+        
+        Returns:
+            dict: A dictionary representation of the user object.
+        """
+        data = {
+            "id": self.id,
+            "uid": self.uid,
+            "name": self.name,
+            "email": self.email,
+            "role": self._role,
+            "joined_classes": self.get_classes()
+        }
+        return data
         
     def update(self, inputs):
         """
@@ -414,8 +403,7 @@ def read(self):
         uid = inputs.get("uid", "")
         password = inputs.get("password", "")
         pfp = inputs.get("pfp", None)
-        score = inputs.get("score", None)  # NEW score update
-       
+
         # Update table with new data
         if name:
             self.name = name
@@ -425,8 +413,6 @@ def read(self):
             self.set_password(password)
         if pfp is not None:
             self.pfp = pfp
-        if isinstance(score, int) and score >= 0:
-            self._score = score
 
         # Check this on each update
         self.set_email()
