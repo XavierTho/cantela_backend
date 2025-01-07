@@ -132,3 +132,105 @@ def get_leaderboard():
 # Run Server
 if __name__ == '__main__':
     app.run(port=5003)
+
+
+# ------------------------------
+# FUTURE PLANS FOR QUIZ BACKEND HANDLING
+# ------------------------------
+
+# 1. User Authentication and Session Management
+# ----------------------------------------------
+# - Integrate user authentication to track quiz attempts and scores per user.
+# - Use JWT tokens for secure session management.
+# - Example of endpoint for user login (to be implemented):
+# 
+# @app.route('/api/auth/login', methods=['POST'])
+# def user_login():
+#     """
+#     Handles user login.
+#     Validates credentials and returns a JWT token for session management.
+#     """
+#     pass  # Placeholder for implementation
+
+# 2. Dynamic Question Loading
+# ---------------------------
+# - Implement database integration to store and retrieve questions dynamically.
+# - Enable categorization of questions based on topics or difficulty levels.
+# - Example database schema (simplified):
+# 
+# CREATE TABLE questions (
+#     id INT PRIMARY KEY,
+#     text TEXT NOT NULL,
+#     options JSON NOT NULL,
+#     correct_answer TEXT NOT NULL,
+#     category TEXT,
+#     difficulty_level INT
+# );
+
+# 3. Personalized Quizzes
+# -----------------------
+# - Allow users to customize quizzes by selecting topics and difficulty levels.
+# - Example endpoint for custom quiz generation:
+# 
+# @app.route('/api/quiz/custom', methods=['POST'])
+# def create_custom_quiz():
+#     """
+#     Generates a custom quiz based on user preferences.
+#     Accepts JSON with 'category' and 'difficulty' fields.
+#     """
+#     pass  # Placeholder for implementation
+
+# 4. Quiz Statistics and Leaderboards
+# -----------------------------------
+# - Track user performance and generate quiz statistics (e.g., average scores, completion times).
+# - Create leaderboards to display top performers.
+# - Example endpoint for retrieving leaderboard data:
+# 
+# @app.route('/api/quiz/leaderboard', methods=['GET'])
+# def get_leaderboard():
+#     """
+#     Retrieves the leaderboard data.
+#     Returns the top users based on their quiz scores.
+#     """
+#     pass  # Placeholder for implementation
+
+# 5. Timed Quizzes
+# ----------------
+# - Introduce a timer feature for quizzes to add time-bound challenges.
+# - Store and compare completion times for additional scoring metrics.
+# - Example of handling timer on the frontend (to be implemented with WebSockets for real-time updates):
+# 
+# function startQuizTimer(duration) {
+#     // Starts a countdown timer for the given duration.
+#     // Sends a real-time update to the backend when the timer expires.
+# }
+
+# 6. Advanced Feedback Mechanisms
+# -------------------------------
+# - Provide detailed feedback after quiz completion, including explanations for correct/incorrect answers.
+# - Example of feedback generation (to be refined and implemented):
+# 
+# def generate_feedback(user_answers):
+#     """
+#     Generates feedback for each question based on user answers.
+#     Returns a list of feedback objects containing question text, user answer, correct answer, and explanation.
+#     """
+#     pass  # Placeholder for implementation
+
+# 7. Multilingual Support
+# -----------------------
+# - Expand the quiz backend to support multiple languages.
+# - Store translations for each question and allow users to select their preferred language.
+# - Example endpoint for setting language preference:
+# 
+# @app.route('/api/user/language', methods=['POST'])
+# def set_language_preference():
+#     """
+#     Sets the user's language preference for quizzes.
+#     Accepts a JSON payload with the selected language.
+#     """
+#     pass  # Placeholder for implementation
+
+# ------------------------------
+# END OF FUTURE PLANS
+# ------------------------------
