@@ -1,13 +1,28 @@
 # user.py
 from flask import current_app
 from flask_login import UserMixin
-from datetime import date
+from datetime import date, datetime
 from sqlalchemy.exc import IntegrityError
 from werkzeug.security import generate_password_hash, check_password_hash
 import os
 import json
 
 from __init__ import app, db
+
+""" Association Table for User and Classes """
+user_classes = db.Table('user_classes',
+    db.Column('user_id', db.Integer, db.ForeignKey('users.id'), primary_key=True),
+    db.Column('class_id', db.Integer, db.ForeignKey('classes.id'), primary_key=True)
+)
+""" studylog Model """
+class studylog(db.Model):
+    __tablename__ = 'studylogs'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, nullable=False)
+    subject = db.Column(db.String(100), nullable=False)
+    hours_studied = db.Column(db.Float, nullable=False)
+    notes = db.Column(db.Text)
+    date = db.Column(db.DateTime, default=datetime.utcnow)
 
 """ Helper Functions """
 
@@ -26,6 +41,33 @@ def default_year():
     if 7 <= current_month <= 12:
         current_year += 1
     return current_year 
+
+""" Class Model """
+
+class Class(db.Model):
+    """
+    Class Model
+
+    Represents a class that users can join or leave.
+
+    Attributes:
+        __tablename__ (str): Name of the database table.
+        id (Column): The primary key for the class.
+        name (Column): Unique name of the class.
+        description (Column): Description of the class.
+    """
+    __tablename__ = 'classes'
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(255), unique=True, nullable=False)
+    description = db.Column(db.String(255), nullable=True)
+
+    def __init__(self, name, description=""):
+        self.name = name
+        self.description = description
+
+    def __repr__(self):
+        return f"<Class {self.name}>"
 
 """ Database Models """
 
@@ -58,10 +100,12 @@ class User(db.Model, UserMixin):
     _password = db.Column(db.String(255), unique=False, nullable=False)
     _role = db.Column(db.String(20), default="User", nullable=False)
     _pfp = db.Column(db.String(255), unique=False, nullable=True)
-   
+
+    # Many-to-Many Relationship with Classes
+    joined_classes = db.relationship('Class', secondary=user_classes, backref='students', lazy='dynamic')
+
     posts = db.relationship('Post', backref='author', lazy=True)
-                                 
-    
+
     def __init__(self, name, uid, password="", role="User", pfp='', email='?'):
         """
         Constructor, 1st step in object creation.
@@ -122,7 +166,8 @@ class User(db.Model, UserMixin):
             bool: True if the user is anonymous, False otherwise.
         """
         return False
-    
+
+    # Properties and Setters
     @property
     def email(self):
         """
@@ -295,6 +340,24 @@ class User(db.Model, UserMixin):
         """
         self._pfp = pfp
 
+    # Class management methods
+    def join_class(self, class_instance):
+        if not self.is_in_class(class_instance):
+            self.joined_classes.append(class_instance)
+            db.session.commit()
+
+    def leave_class(self, class_instance):
+        if self.is_in_class(class_instance):
+            self.joined_classes.remove(class_instance)
+            db.session.commit()
+
+    def is_in_class(self, class_instance):
+        return self.joined_classes.filter(user_classes.c.class_id == class_instance.id).count() > 0
+
+    def get_classes(self):
+        return [cls.name for cls in self.joined_classes.all()]
+
+    # CRUD methods
     def create(self, inputs=None):
         """
         Adds a new record to the table and commits the transaction.
@@ -328,6 +391,7 @@ class User(db.Model, UserMixin):
             "name": self.name,
             "email": self.email,
             "role": self._role,
+            "joined_classes": self.get_classes()
         }
         return data
         
