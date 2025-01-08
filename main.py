@@ -191,7 +191,6 @@ def generate_data():
     initNestPosts()
     initVotes()
     initFlashcards()
-    initstudylog()
 
 def backup_database(db_uri, backup_uri):
     if backup_uri:
@@ -250,7 +249,7 @@ def restore_data_command():
 app.cli.add_command(custom_cli)
 
 # AI Homework Help Endpoint
-genai.configure(api_key="AIzaSyCc3BTu2941MRM_lAZZmvxWND5eDs3mCpk")
+genai.configure(api_key="AIzaSyAdopg5pOVdNN8eveu5ZQ4O4u4IZuK9NaY")
 model = genai.GenerativeModel('gemini-pro')
 
 @app.route('/api/ai/help', methods=['POST'])
