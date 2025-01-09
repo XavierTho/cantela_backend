@@ -9,6 +9,7 @@ CORS(app, supports_credentials=True, origins='*')
 # ------------------------------
 # USER DATA API
 # ------------------------------
+#static database of user information used to understand API not important for website 
 @app.route('/api/data')
 def get_data():
     InfoDb = [
@@ -23,6 +24,7 @@ def get_data():
 # ------------------------------
 # HOME PAGE
 # ------------------------------
+# A route to return a simple HTML page with links to various endpoints whem running the api to verify working system 
 @app.route('/')
 def home():
     html_content = """
@@ -43,6 +45,7 @@ def home():
 # ------------------------------
 # QUIZ HANDLING BACKEND
 # ------------------------------
+#Static pool of quetions for APUSH
 
 question_pool = [
     {"id": 1, "text": "Who was the first President of the United States?", "options": ["George Washington", "Thomas Jefferson", "John Adams", "James Madison"], "correctAnswer": "George Washington"},
@@ -98,42 +101,53 @@ question_pool = [
     {"id": 50, "text": "Which amendment gave African American men the right to vote?", "options": ["15th Amendment", "13th Amendment", "14th Amendment", "19th Amendment"], "correctAnswer": "15th Amendment"}
 ]
 
-    # Add 25 more questions (following the same format).
+   
+# Leaderboard data stored in memory
+leaderboard = []  # A list to store user names and their scores.
 
-# Leaderboard data (in-memory for now)
-leaderboard = []
-
-@app.route('/api/quiz/apush', methods=['GET'])
+# Route to fetch 10 random questions from the question pool
+@app.route('/api/quiz/apush', methods=['GET'])  # Endpoint to get APUSH quiz questions.
 def get_questions():
-    selected_questions = random.sample(question_pool, 10)  #number of random questions taken from pool . 
-    sanitized_questions = [{key: value for key, value in q.items() if key != "correctAnswer"} for q in selected_questions]
-    return jsonify(sanitized_questions), 200
+    selected_questions = random.sample(question_pool, 10)  # Pick 10 random questions from the pool.
+    sanitized_questions = [  # Remove the correctAnswer field so users can't see the answers.
+        {key: value for key, value in q.items() if key != "correctAnswer"} 
+        for q in selected_questions
+    ]
+    return jsonify(sanitized_questions), 200  # Send sanitized questions as JSON with HTTP 200 (success).
 
-@app.route('/api/quiz/apush/submit', methods=['POST'])
+# Route to handle quiz submissions
+@app.route('/api/quiz/apush/submit', methods=['POST'])  # Endpoint to submit quiz answers.
 def submit_quiz():
-    data = request.json
-    answers = data.get('answers', [])
-    user_name = data.get('name', 'Anonymous')
+    data = request.json  # Get JSON data from the request.
+    answers = data.get('answers', [])  # Get the user's answers or an empty list if none provided.
+    user_name = data.get('name', 'Anonymous')  # Get the user's name or default to "Anonymous".
 
-    score = 0
-    for answer in answers:
-        question = next((q for q in question_pool if q["id"] == answer["questionId"]), None)
-        if question and question["correctAnswer"] == answer["answer"]:
-            score += 1
+    score = 0  # Initialize the user's score to zero.
+    for answer in answers:  # Loop through each answer submitted by the user.
+        question = next(  # Find the matching question in the question pool.
+            (q for q in question_pool if q["id"] == answer["questionId"]), 
+            None
+        )
+        if question and question["correctAnswer"] == answer["answer"]:  # Check if the answer is correct.
+            score += 1  # Add 1 to the score for each correct answer.
 
-    leaderboard.append({"name": user_name, "score": score})
-    return jsonify({"name": user_name, "score": score}), 200
+    leaderboard.append({"name": user_name, "score": score})  # Add the user's name and score to the leaderboard.
+    return jsonify({"name": user_name, "score": score}), 200  # Send the user's score as JSON with HTTP 200.
 
-@app.route('/api/leaderboard/apush', methods=['GET'])
+# Route to fetch the leaderboard, sorted by score in descending order
+@app.route('/api/leaderboard/apush', methods=['GET'])  # Endpoint to get the APUSH leaderboard.
 def get_leaderboard():
-    sorted_leaderboard = sorted(leaderboard, key=lambda x: x['score'], reverse=True)
-    return jsonify(sorted_leaderboard), 200
+    sorted_leaderboard = sorted(  # Sort the leaderboard by score, highest first.
+        leaderboard, key=lambda x: x['score'], reverse=True
+    )
+    return jsonify(sorted_leaderboard), 200  # Send the sorted leaderboard as JSON with HTTP 200.
 
-# Run Server
+
+# ------------------------------
+# RUN THE SERVER
+# ------------------------------
 if __name__ == '__main__':
-    app.run(port=5003)
-
-
+    app.run(port=5003)  # Run the app on port 5003
 # ------------------------------
 # FUTURE PLANS FOR QUIZ BACKEND HANDLING
 # ------------------------------
