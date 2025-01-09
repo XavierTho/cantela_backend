@@ -1,5 +1,5 @@
 # imports from flask
-import google.generativeai as genai
+# import google.generativeai as genai
 import requests
 import json
 import os
@@ -30,10 +30,11 @@ from api.messages_api import messages_api  # Messages
 from api.flashcard import flashcard_api
 from api.vote import vote_api
 from api.studylog import studylog_api
+from api.gradelog import gradelog_api
 from api.profile import profile_api
 
 # database Initialization functions
-from model.user import studylog, User, initUsers
+from model.user import studylog, gradelog, User, initUsers
 from model.section import Section, initSections
 from model.group import Group, initGroups
 from model.channel import Channel, initChannels
@@ -42,6 +43,7 @@ from model.nestPost import NestPost, initNestPosts
 from model.vote import Vote, initVotes
 from model.flashcard import Flashcard, initFlashcards
 from model.studylog import initStudyLog
+from model.gradelog import initGradeLog
 
 # server only Views
 
@@ -59,6 +61,7 @@ app.register_blueprint(vote_api)
 app.register_blueprint(flashcard_api)
 app.register_blueprint(flashcard_import_api)
 app.register_blueprint(studylog_api)
+app.register_blueprint(gradelog_api)
 app.register_blueprint(profile_api)
 
 
@@ -131,6 +134,48 @@ def get_study_progress(user_id):
         return jsonify(data), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+    
+
+# Routes for grade logger
+@app.route('/api/grade-tracker/log', methods=['POST'])
+def log_grade():
+    """
+    Log a new grade for a user.
+    """
+    try:
+        data = request.json
+        new_log = gradelog(
+            user_id=data['user_id'],
+            subject=data['subject'],
+            grade=data['grade'],  # Changed from hours_studied to grade
+            notes=data.get('notes', '')
+        )
+        db.session.add(new_log)
+        db.session.commit()
+        return jsonify({'message': 'Grade logged successfully'}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/grade-tracker/progress/<int:user_id>', methods=['GET'])
+def get_grade_progress(user_id):
+    """
+    Retrieve all grades for a specific user.
+    """
+    try:
+        logs = gradelog.query.filter_by(user_id=user_id).all()
+        data = [
+            {
+                'subject': log.subject,
+                'grade': log.grade,  # Changed from hours to grade
+                'date': log.date.strftime('%Y-%m-%d')
+            }
+            for log in logs
+        ]
+        return jsonify(data), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 
 @app.errorhandler(404)
 def page_not_found(e):
@@ -256,8 +301,8 @@ def restore_data_command():
 app.cli.add_command(custom_cli)
 
 # AI Homework Help Endpoint
-genai.configure(api_key="AIzaSyAdopg5pOVdNN8eveu5ZQ4O4u4IZuK9NaY")
-model = genai.GenerativeModel('gemini-pro')
+# genai.configure(api_key="AIzaSyAdopg5pOVdNN8eveu5ZQ4O4u4IZuK9NaY")
+# model = genai.GenerativeModel('gemini-pro')
 
 @app.route('/api/ai/help', methods=['POST'])
 def ai_homework_help():
@@ -280,4 +325,5 @@ if __name__ == "__main__":
     with app.app_context():
         initFlashcards()
         initStudyLog()
+        initGradeLog()
     app.run(debug=True, host="0.0.0.0", port="8887")
