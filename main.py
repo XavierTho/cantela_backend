@@ -193,7 +193,7 @@ def generate_data():
     initNestPosts()
     initVotes()
     initFlashcards()
-    #initstudylog()
+    initstudylog()
 
 def backup_database(db_uri, backup_uri):
     if backup_uri:
