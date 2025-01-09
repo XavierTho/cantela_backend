@@ -28,6 +28,7 @@ from api.messages_api import messages_api  # Messages
 from api.flashcard import flashcard_api
 from api.vote import vote_api
 from api.studylog import studylog_api
+from api.profile import profile_api
 
 # database Initialization functions
 from model.user import studylog, User, initUsers
@@ -55,6 +56,7 @@ app.register_blueprint(nestImg_api)
 app.register_blueprint(vote_api)
 app.register_blueprint(flashcard_api)
 app.register_blueprint(studylog_api)
+app.register_blueprint(profile_api)
 
 # Tell Flask-Login the view function name of your login route
 login_manager.login_view = "login"
@@ -191,7 +193,7 @@ def generate_data():
     initNestPosts()
     initVotes()
     initFlashcards()
-    initstudylog()
+    #initstudylog()
 
 def backup_database(db_uri, backup_uri):
     if backup_uri:
