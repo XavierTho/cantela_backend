@@ -12,6 +12,8 @@ from flask import current_app
 from werkzeug.security import generate_password_hash
 import shutil
 from flask_cors import CORS  # Import CORS
+from flask import Blueprint, jsonify
+from api.flashcard_import import flashcard_import_api
 
 # import "objects" from "this" project
 from __init__ import app, db, login_manager  # Key Flask objects 
@@ -37,7 +39,7 @@ from model.channel import Channel, initChannels
 from model.post import Post, initPosts
 from model.nestPost import NestPost, initNestPosts
 from model.vote import Vote, initVotes
-from model.flashcard import initFlashcards
+from model.flashcard import Flashcard, initFlashcards
 from model.studylog import initStudyLog
 
 # server only Views
@@ -54,7 +56,9 @@ app.register_blueprint(nestPost_api)
 app.register_blueprint(nestImg_api)
 app.register_blueprint(vote_api)
 app.register_blueprint(flashcard_api)
+app.register_blueprint(flashcard_import_api)
 app.register_blueprint(studylog_api)
+
 
 # Tell Flask-Login the view function name of your login route
 login_manager.login_view = "login"
@@ -176,7 +180,8 @@ def reset_password(user_id):
 
 @app.route('/api/id', methods=['GET'])
 def get_id():
-    return jsonify({"message": "API is working!"})
+    return jsonify({"message": "API is working!"}), 200
+
 
 # Custom CLI Commands
 custom_cli = AppGroup('custom', help='Custom commands')
@@ -269,7 +274,7 @@ def ai_homework_help():
     except Exception as e:
         print("Error:", e)
         return jsonify({"error": str(e)}), 500
-
+    
 if __name__ == "__main__":
     with app.app_context():
         initFlashcards()
