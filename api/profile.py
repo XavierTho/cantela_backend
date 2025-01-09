@@ -1,16 +1,16 @@
 from flask import Blueprint, jsonify, Flask
-from flask_restful import Api, Resource  # used for REST API building
-from flask_cors import CORS
+from flask_restful import Api, Resource  # For building REST APIs
+from flask_cors import CORS  # Handles cross-origin requests
 
-profile_api = Blueprint('profile_api', __name__, url_prefix='/api')
+# Set up the Flask app and API
+profile_api = Blueprint('profile_api', __name__, url_prefix='/api')  # Blueprint for modular API
 app = Flask(__name__)
-CORS(app, supports_credentials=True, origins='*')
+CORS(app, supports_credentials=True, origins='*')  # Allows frontend to talk to the backend without issues
 
-# API docs https://flask-restful.readthedocs.io/en/latest/
-api = Api(profile_api)
+api = Api(profile_api)  # Connect the API to the Blueprint
 
+# This is where we store all the student info for now (just static data)
 class ProfileAPI:
-    # @app.route('/api/profile/')
     def get_student(name):
         students = {
             "Thomas Edison": {
@@ -50,14 +50,16 @@ class ProfileAPI:
                 "Grade": "A+"
             }
         }
+        # Try to get the student data by name, or return None if not found
         return students.get(name)
 
+# Each class below is basically an endpoint for one student's data
 class ThomasResource(Resource):
     def get(self):
         student = ProfileAPI.get_student("Thomas Edison")
-        if student:
+        if student:  # If we found the student, return their data
             return jsonify(student)
-        return {"Data not found"}, 404
+        return {"Data not found"}, 404  # If no data, send a 404 error
 
 class GraceResource(Resource):
     def get(self):
@@ -94,10 +96,10 @@ class ArushResource(Resource):
             return jsonify(student)
         return {"Data not found"}, 404
 
-# Building REST API endpoint
-api.add_resource(ThomasResource, '/data/Thomas')
-api.add_resource(GraceResource, '/data/Grace')
-api.add_resource(NicholasResource, '/data/Nicholas')
-api.add_resource(XavierResource, '/data/Xavier')
-api.add_resource(ArmaghanResource, '/data/Armaghan')
-api.add_resource(ArushResource, '/data/Arush')
+# Add routes for each student. The URL will map to the right resource.
+api.add_resource(ThomasResource, '/data/Thomas')  # /api/data/Thomas
+api.add_resource(GraceResource, '/data/Grace')    # /api/data/Grace
+api.add_resource(NicholasResource, '/data/Nicholas')  # /api/data/Nicholas
+api.add_resource(XavierResource, '/data/Xavier')  # /api/data/Xavier
+api.add_resource(ArmaghanResource, '/data/Armaghan')  # /api/data/Armaghan
+api.add_resource(ArushResource, '/data/Arush')    # /api/data/Arush
