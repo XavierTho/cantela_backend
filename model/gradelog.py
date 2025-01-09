@@ -67,3 +67,10 @@ def initGradeLog():
     with app.app_context():
         db.create_all()
         print("GradeLogs table initialized.")
+        # Add an example entry
+        example_user = User.query.first()
+        if example_user:
+            example_log = GradeLog(user_id=example_user.id, subject='Math', grade=95.0, notes='Excellent work')
+            db.session.add(example_log)
+            db.session.commit()
+            print("Example GradeLog entry added.")
