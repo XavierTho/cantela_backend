@@ -32,6 +32,7 @@ from api.vote import vote_api
 from api.studylog import studylog_api
 from api.gradelog import gradelog_api
 from api.profile import profile_api
+from api.tips import tips_api
 
 # database Initialization functions
 from model.user import studylog, gradelog, User, initUsers
@@ -63,6 +64,7 @@ app.register_blueprint(flashcard_import_api)
 app.register_blueprint(studylog_api)
 app.register_blueprint(gradelog_api)
 app.register_blueprint(profile_api)
+app.register_blueprint(tips_api)
 
 
 # Tell Flask-Login the view function name of your login route
