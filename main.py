@@ -45,6 +45,7 @@ from model.vote import Vote, initVotes
 from model.flashcard import Flashcard, initFlashcards
 from model.studylog import initStudyLog
 from model.gradelog import initGradeLog
+from model.profile import Profile, initProfiles
 
 # server only Views
 
@@ -323,9 +324,16 @@ def ai_homework_help():
         print("Error:", e)
         return jsonify({"error": str(e)}), 500
     
+
+@app.route('/profiles', methods=['GET'])
+def get_profiles():
+    profiles = Profile.query.all()
+    return jsonify([profile.read() for profile in profiles])
+    
 if __name__ == "__main__":
     with app.app_context():
         initFlashcards()
         initStudyLog()
         initGradeLog()
+        initProfiles()
     app.run(debug=True, host="0.0.0.0", port="8887")
