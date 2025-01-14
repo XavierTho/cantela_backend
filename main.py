@@ -329,7 +329,13 @@ def ai_homework_help():
 def get_profiles():
     profiles = Profile.query.all()
     return jsonify([profile.read() for profile in profiles])
+#get all profiles
 
+@app.route('/profiles/<int:id>', methods=['GET'])
+def get_profile(id):
+    profile = Profile.query.get_or_404(id)
+    return jsonify(profile.read())
+#get a specific profile
 
 @app.route('/profiles', methods=['POST'])
 def create_profile():
@@ -347,7 +353,7 @@ def create_profile():
         return jsonify(new_profile.read()), 201
     except Exception as e:
         return jsonify({"error": str(e)}), 400
-
+#create new profile post
     
 if __name__ == "__main__":
     with app.app_context():
