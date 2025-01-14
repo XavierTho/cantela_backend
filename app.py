@@ -28,7 +28,7 @@ def get_data():
 @app.route('/')
 def home():
     html_content = """
-    <html>
+    <html>   
     <head><title>Welcome</title></head>
     <body>
         <h1>Welcome to the Flask App</h1>
@@ -105,6 +105,8 @@ question_pool = [
 # Leaderboard data stored in memory
 leaderboard = []  # A list to store user names and their scores.
 
+
+
 # Route to fetch 10 random questions from the question pool
 @app.route('/api/quiz/apush', methods=['GET'])  # Endpoint to get APUSH quiz questions.
 def get_questions():
@@ -148,6 +150,13 @@ def get_leaderboard():
 # ------------------------------
 if __name__ == '__main__':
     app.run(port=5003)  # Run the app on port 5003
+
+
+
+
+
+
+    
 # ------------------------------
 # FUTURE PLANS FOR QUIZ BACKEND HANDLING
 # ------------------------------
