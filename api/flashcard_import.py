@@ -1,5 +1,5 @@
 import requests
-from flask import Blueprint, jsonify
+from flask import Blueprint, jsonify, request
 from model.flashcard import Flashcard
 from __init__ import db
 
@@ -7,12 +7,19 @@ flashcard_import_api = Blueprint('flashcard_import_api', __name__, url_prefix='/
 
 @flashcard_import_api.route('/import-flashcards', methods=['GET'])
 def import_flashcards():
-    """
-    Import questions and answers from an external API and save them as flashcards.
-    """
     try:
-        # Fetch data from an external API (e.g., Open Trivia Database)
-        response = requests.get("https://opentdb.com/api.php?amount=10&difficulty=medium&type=multiple")
+        # Get query parameters with proper handling
+        amount = request.args.get('amount', default=10, type=int)  # Default to 10 questions
+        difficulty = request.args.get('difficulty', default='medium', type=str)  # Default to medium
+        category = request.args.get('category', default=None, type=str)  # Default to None
+
+        # Construct the API URL dynamically
+        api_url = f"https://opentdb.com/api.php?amount={amount}&difficulty={difficulty}"
+        if category:  # Add the category parameter only if it is provided and valid
+            api_url += f"&category={category}"
+
+        # Fetch data from Open Trivia Database
+        response = requests.get(api_url)
         if response.status_code != 200:
             return jsonify({"error": "Failed to fetch data from external API"}), 500
 
@@ -24,7 +31,6 @@ def import_flashcards():
             question = item.get("question")
             answer = item.get("correct_answer")
             if question and answer:
-                # Create and store a flashcard in the database
                 flashcard = Flashcard(title=question, content=answer, user_id=1)  # Replace user_id as needed
                 db.session.add(flashcard)
                 flashcards.append(flashcard.read())
