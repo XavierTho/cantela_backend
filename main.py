@@ -329,6 +329,25 @@ def ai_homework_help():
 def get_profiles():
     profiles = Profile.query.all()
     return jsonify([profile.read() for profile in profiles])
+
+
+@app.route('/profiles', methods=['POST'])
+def create_profile():
+    data = request.json
+    new_profile = Profile(
+        name=data['name'],
+        classes=data['classes'],
+        favorite_class=data['favorite_class'],
+        favorite_flashcard=data['favorite_flashcard'],
+        grade=data['grade'],
+        user_id=data['user_id']
+    )
+    try:
+        new_profile.create()
+        return jsonify(new_profile.read()), 201
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
     
 if __name__ == "__main__":
     with app.app_context():
