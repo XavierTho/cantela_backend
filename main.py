@@ -11,6 +11,8 @@ from flask import current_app
 from werkzeug.security import generate_password_hash
 import shutil
 from flask_cors import CORS  # Import CORS
+from flask import Blueprint, jsonify
+from api.flashcard_import import flashcard_import_api
 
 # import "objects" from "this" project
 from __init__ import app, db, login_manager  # Key Flask objects 
@@ -27,17 +29,22 @@ from api.messages_api import messages_api  # Messages
 from api.flashcard import flashcard_api
 from api.vote import vote_api
 from api.studylog import studylog_api
+from api.gradelog import gradelog_api
+from api.profile import profile_api
+from api.tips import tips_api
 
 # database Initialization functions
-from model.user import studylog, User, initUsers
+from model.user import studylog, gradelog, User, initUsers
 from model.section import Section, initSections
 from model.group import Group, initGroups
 from model.channel import Channel, initChannels
 from model.post import Post, initPosts
 from model.nestPost import NestPost, initNestPosts
 from model.vote import Vote, initVotes
-from model.flashcard import initFlashcards
+from model.flashcard import Flashcard, initFlashcards
 from model.studylog import initStudyLog
+from model.gradelog import initGradeLog
+from model.profile import Profile, initProfiles
 
 # server only Views
 
@@ -53,7 +60,12 @@ app.register_blueprint(nestPost_api)
 app.register_blueprint(nestImg_api)
 app.register_blueprint(vote_api)
 app.register_blueprint(flashcard_api)
+app.register_blueprint(flashcard_import_api)
 app.register_blueprint(studylog_api)
+app.register_blueprint(gradelog_api)
+app.register_blueprint(profile_api)
+app.register_blueprint(tips_api)
+
 
 # Tell Flask-Login the view function name of your login route
 login_manager.login_view = "login"
@@ -124,6 +136,48 @@ def get_study_progress(user_id):
         return jsonify(data), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+    
+
+# Routes for grade logger
+@app.route('/api/grade-tracker/log', methods=['POST'])
+def log_grade():
+    """
+    Log a new grade for a user.
+    """
+    try:
+        data = request.json
+        new_log = gradelog(
+            user_id=data['user_id'],
+            subject=data['subject'],
+            grade=data['grade'],  # Changed from hours_studied to grade
+            notes=data.get('notes', '')
+        )
+        db.session.add(new_log)
+        db.session.commit()
+        return jsonify({'message': 'Grade logged successfully'}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/grade-tracker/progress/<int:user_id>', methods=['GET'])
+def get_grade_progress(user_id):
+    """
+    Retrieve all grades for a specific user.
+    """
+    try:
+        logs = gradelog.query.filter_by(user_id=user_id).all()
+        data = [
+            {
+                'subject': log.subject,
+                'grade': log.grade,  # Changed from hours to grade
+                'date': log.date.strftime('%Y-%m-%d')
+            }
+            for log in logs
+        ]
+        return jsonify(data), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 
 @app.errorhandler(404)
 def page_not_found(e):
@@ -175,7 +229,8 @@ def reset_password(user_id):
 
 @app.route('/api/id', methods=['GET'])
 def get_id():
-    return jsonify({"message": "API is working!"})
+    return jsonify({"message": "API is working!"}), 200
+
 
 # Custom CLI Commands
 custom_cli = AppGroup('custom', help='Custom commands')
@@ -190,7 +245,6 @@ def generate_data():
     initNestPosts()
     initVotes()
     initFlashcards()
-    initstudylog()
 
 def backup_database(db_uri, backup_uri):
     if backup_uri:
@@ -248,7 +302,13 @@ def restore_data_command():
 
 app.cli.add_command(custom_cli)
 
+<<<<<<< HEAD
 
+=======
+# AI Homework Help Endpoint
+genai.configure(api_key="AIzaSyAdopg5pOVdNN8eveu5ZQ4O4u4IZuK9NaY")
+model = genai.GenerativeModel('gemini-pro')
+>>>>>>> cf9e7c6d0c4a9d588f4a274170a5e65f3a4bacca
 
 @app.route('/api/ai/help', methods=['POST'])
 def ai_homework_help():
@@ -266,9 +326,42 @@ def ai_homework_help():
     except Exception as e:
         print("Error:", e)
         return jsonify({"error": str(e)}), 500
+    
 
+@app.route('/profiles', methods=['GET'])
+def get_profiles():
+    profiles = Profile.query.all()
+    return jsonify([profile.read() for profile in profiles])
+#get all profiles
+
+@app.route('/profiles/<int:id>', methods=['GET'])
+def get_profile(id):
+    profile = Profile.query.get_or_404(id)
+    return jsonify(profile.read())
+#get a specific profile
+
+@app.route('/profiles', methods=['POST'])
+def create_profile():
+    data = request.json
+    new_profile = Profile(
+        name=data['name'],
+        classes=data['classes'],
+        favorite_class=data['favorite_class'],
+        favorite_flashcard=data['favorite_flashcard'],
+        grade=data['grade'],
+        user_id=data['user_id']
+    )
+    try:
+        new_profile.create()
+        return jsonify(new_profile.read()), 201
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+#create new profile post
+    
 if __name__ == "__main__":
     with app.app_context():
         initFlashcards()
         initStudyLog()
+        initGradeLog()
+        initProfiles()
     app.run(debug=True, host="0.0.0.0", port="8887")
