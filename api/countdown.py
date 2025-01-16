@@ -1,103 +1,52 @@
-from flask import Flask, jsonify, render_template_string
-from flask_cors import CORS
+from flask import Blueprint, jsonify
 from datetime import datetime, timedelta
 
-app = Flask(__name__)
-CORS(app, supports_credentials=True, origins='*')  # Allow all origins (*)
+countdown_api = Blueprint('countdown_api', __name__, url_prefix='/api')
 
-# ========================
-# Class Schedule
-# ========================
-schedule = [
-    {"Period": 1, "Class": "Honors Medical Intervention", "Start": "08:35", "End": "09:41"},
-    {"Period": 2, "Class": "AP CSP", "Start": "09:46", "End": "10:55"},
-    {"Period": 3, "Class": "AFA 2", "Start": "11:37", "End": "12:43"},
-    {"Period": 4, "Class": "APUSH", "Start": "13:18", "End": "14:24"},
-    {"Period": 5, "Class": "AmLit", "Start": "14:29", "End": "15:35"}
-]
-
-# ========================
-# Helper Functions
-# ========================
-def get_next_school_day_start():
-    today = datetime.now()
-    tomorrow = today + timedelta(days=1)
-    next_school_start = datetime.combine(tomorrow, datetime.strptime("08:35", "%H:%M").time())
-    return next_school_start - today
-
-# ========================
-# Class Schedule Countdown
-# ========================
-@app.route('/html/schedule', methods=['GET'])
-def render_schedule_html():
-    now = datetime.now().time()
-    current_period = None
-    next_period = None
-
-    for period in schedule:
-        start = datetime.strptime(period["Start"], "%H:%M").time()
-        end = datetime.strptime(period["End"], "%H:%M").time()
-        if start <= now <= end:
-            current_period = period
-        elif now < start and not next_period:
-            next_period = period
-
-    next_day_time = get_next_school_day_start()
-    template = """
-    <html>
-    <head>
-        <title>Class Schedule Countdown</title>
-        <style>
-            body {
-                font-family: Arial, sans-serif;
-                text-align: center;
-                background: linear-gradient(to bottom, #FFF5E1, #FFDAB9);
-                animation: fadeIn 2s;
-            }
-            h1 { font-size: 36px; color: #FF4500; }
-            h2 { font-size: 24px; color: #2F4F4F; }
-            .celebration {
-                color: #FF4500;
-                font-size: 24px;
-                font-weight: bold;
-                margin-top: 20px;
-                animation: pulse 1s infinite alternate;
-            }
-            @keyframes fadeIn {
-                from { opacity: 0; }
-                to { opacity: 1; }
-            }
-            @keyframes pulse {
-                from { transform: scale(1); }
-                to { transform: scale(1.1); }
-            }
-        </style>
-    </head>
-    <body>
-        <h1>Class Schedule Countdown</h1>
-        {% if current_period %}
-        <h2>Current Period: {{ current_period["Class"] }}</h2>
-        <p>Class ends at: {{ current_period["End"] }}</p>
-        {% elif next_period %}
-        <h2>Next Period: {{ next_period["Class"] }}</h2>
-        <p>Starts at: {{ next_period["Start"] }}</p>
-        {% else %}
-        <h2 class="celebration">You're done for the day! 🎉</h2>
-        <p>Next school day starts in: {{ next_day_time }}</p>
-        {% endif %}
-    </body>
-    </html>
+@countdown_api.route('/countdown', methods=['GET'])
+def get_countdown():
     """
-    return render_template_string(template, current_period=current_period, next_period=next_period, next_day_time=next_day_time)
+    Calculate the countdown to the weekend (Saturday, 12:00 AM).
+    """
+    now = datetime.now()
+    # Get the upcoming Saturday
+    days_until_saturday = (5 - now.weekday()) % 7  # Saturday is day 5 (0 = Monday)
+    next_saturday = now + timedelta(days=days_until_saturday)
+    next_saturday_midnight = next_saturday.replace(hour=0, minute=0, second=0, microsecond=0)
 
-# ========================
-# Run the Flask App
-# ========================
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5013, debug=True)
+    # Calculate the time difference
+    time_remaining = next_saturday_midnight - now
+    hours, remainder = divmod(time_remaining.total_seconds(), 3600)
+    minutes, seconds = divmod(remainder, 60)
 
+    # Return the countdown to the weekend
+    countdown_to_saturday = { # BREAKPOINT
+        "days": time_remaining.days,
+        "hours": int(hours),
+        "minutes": int(minutes),
+        "seconds": int(seconds)
+    }
 
+    # Get the upcoming Monday (next week, 12:00 AM)
+    days_until_monday = (0 - now.weekday()) % 7  # Monday is day 0
+    next_monday = now + timedelta(days=days_until_monday)
+    next_monday_midnight = next_monday.replace(hour=0, minute=0, second=0, microsecond=0)
 
+    # Calculate the time difference for Monday
+    time_until_monday = next_monday_midnight - now
+    hours_monday, remainder_monday = divmod(time_until_monday.total_seconds(), 3600)
+    minutes_monday, seconds_monday = divmod(remainder_monday, 60)
 
-### http://localhost:5013/html/schedule
-### http://127.0.0.1:5013/html/schedule
+    # Return the countdown to Monday
+    countdown_to_monday = { # BREAKPOINT
+        "days": time_until_monday.days,
+        "hours": int(hours_monday),
+        "minutes": int(minutes_monday),
+        "seconds": int(seconds_monday)
+    }
+
+    # Return both countdowns as a JSON response
+    return jsonify({
+        "countdown_to_saturday": countdown_to_saturday,
+        "countdown_to_monday": countdown_to_monday
+    })
