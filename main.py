@@ -45,7 +45,7 @@ from model.vote import Vote, initVotes
 from model.flashcard import Flashcard, initFlashcards
 from model.studylog import initStudyLog
 from model.gradelog import initGradeLog
-from model.profile import Profile, initProfiles
+from model.profiles import Profile, initProfiles
 
 # server only Views
 
@@ -246,6 +246,7 @@ def generate_data():
     initNestPosts()
     initVotes()
     initFlashcards()
+    initProfiles()
 
 def backup_database(db_uri, backup_uri):
     if backup_uri:
@@ -325,36 +326,63 @@ def ai_homework_help():
         return jsonify({"error": str(e)}), 500
     
 
+# Add a GET route to retrieve all profiles
 @app.route('/profiles', methods=['GET'])
-def get_profiles():
-    profiles = Profile.query.all()
-    return jsonify([profile.read() for profile in profiles])
-#get all profiles
+def get_all_profiles():
+    """
+    Retrieve all profiles from the database.
 
-@app.route('/profiles/<int:id>', methods=['GET'])
-def get_profile(id):
-    profile = Profile.query.get_or_404(id)
-    return jsonify(profile.read())
-#get a specific profile
+    Returns:
+        JSON response with a list of all profiles.
+    """
+    try:
+        # Query all profiles from the database
+        profiles = Profile.query.all()
+        # Convert profiles to a list of dictionaries
+        profiles_data = [profile.read() for profile in profiles]
+        return jsonify(profiles_data), 200  # Return the profiles as JSON
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
+# Add a POST route for creating a new profile
 @app.route('/profiles', methods=['POST'])
 def create_profile():
-    data = request.json
-    new_profile = Profile(
-        name=data['name'],
-        classes=data['classes'],
-        favorite_class=data['favorite_class'],
-        favorite_flashcard=data['favorite_flashcard'],
-        grade=data['grade'],
-        user_id=data['user_id']
+    """
+    Create a new profile using data from the request body.
+
+    Request Body:
+        {
+            "name": "Alice Johnson",
+            "classes": "Math, Science, History",
+            "favorite_class": "Science",
+            "grade": "A"
+        }
+
+    Returns:
+        JSON response with the created profile or an error message.
+    """
+    data = request.get_json()  # Get the JSON data from the request body
+
+    # Validate the required fields
+    if not all(key in data for key in ("name", "classes", "favorite_class", "grade")):
+        return jsonify({"error": "Missing one or more required fields"}), 400
+
+    # Create a new profile instance
+    profile = Profile(
+        name=data["name"],
+        classes=data["classes"],
+        favorite_class=data["favorite_class"],
+        grade=data["grade"]
     )
+
+    # Save the profile to the database
     try:
-        new_profile.create()
-        return jsonify(new_profile.read()), 201
+        profile.create()
+        return jsonify(profile.read()), 201  # Return the created profile as JSON
     except Exception as e:
-        return jsonify({"error": str(e)}), 400
-#create new profile post
-    
+        return jsonify({"error": str(e)}), 500
+
+
 if __name__ == "__main__":
     with app.app_context():
         initFlashcards()
