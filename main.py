@@ -1,5 +1,5 @@
 # imports from flask
-import google.generativeai as genai
+#import google.generativeai as genai
 import requests
 import json
 import os
@@ -304,8 +304,8 @@ def restore_data_command():
 app.cli.add_command(custom_cli)
 
 # AI Homework Help Endpoint
-genai.configure(api_key="AIzaSyAdopg5pOVdNN8eveu5ZQ4O4u4IZuK9NaY")
-model = genai.GenerativeModel('gemini-pro')
+# genai.configure(api_key="AIzaSyAdopg5pOVdNN8eveu5ZQ4O4u4IZuK9NaY")
+# model = genai.GenerativeModel('gemini-pro')
 
 @app.route('/api/ai/help', methods=['POST'])
 def ai_homework_help():
