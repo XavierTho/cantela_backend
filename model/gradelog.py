@@ -76,9 +76,9 @@ def initGradeLog():
 
         # Define test grade logs
         grade_logs = [
-            GradeLog(user_id=admin_user.id, subject='Math', grade=50, notes='Reviewed algebra'),
-            GradeLog(user_id=admin_user.id, subject='Science', grade=60, notes='Studied physics'),
-            GradeLog(user_id=admin_user.id, subject='History', grade=70, notes='Read about WWII'),
+            GradeLog(user_id=admin_user.id, subject='Math', grade=50, notes='Failed basic arithmetic'),
+            GradeLog(user_id=admin_user.id, subject='Science', grade=60, notes='Failed physics exam'),
+            GradeLog(user_id=admin_user.id, subject='History', grade=70, notes='Forgot details on American Civil War'),
             GradeLog(user_id=admin_user.id, subject='English', grade=80, notes='Analyzed Shakespeare'),
         ]
 
