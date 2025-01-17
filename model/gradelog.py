@@ -65,12 +65,25 @@ class GradeLog(db.Model):
 
 def initGradeLog():
     with app.app_context():
-        db.create_all()
-        print("GradeLogs table initialized.")
-        # Add an example entry
-        example_user = User.query.first()
-        if example_user:
-            example_log = GradeLog(user_id=example_user.id, subject='Math', grade=95.0, notes='Excellent work')
-            db.session.add(example_log)
-            db.session.commit()
-            print("Example GradeLog entry added.")
+        db.create_all()  # Create all tables
+        print("GradeLog table initialized.")
+
+        # Ensure the admin user exists
+        admin_user = User.query.filter_by(_uid="admin").first()
+        if not admin_user:
+            print("Admin user not found. Cannot initialize GradeLogs.")
+            return
+
+        # Define test grade logs
+        grade_logs = [
+            GradeLog(user_id=admin_user.id, subject='Math', grade=50, notes='Reviewed algebra'),
+            GradeLog(user_id=admin_user.id, subject='Science', grade=60, notes='Studied physics'),
+            GradeLog(user_id=admin_user.id, subject='History', grade=70, notes='Read about WWII'),
+            GradeLog(user_id=admin_user.id, subject='English', grade=80, notes='Analyzed Shakespeare'),
+        ]
+
+        # Add the test data to the database
+        for log in grade_logs:
+            db.session.add(log)
+        db.session.commit()
+        print("Grade logs table initialized with test data.")
