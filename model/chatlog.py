@@ -16,10 +16,12 @@ class Chatlog(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     _prompt = db.Column(db.String(255), nullable=False)
     _response = db.Column(db.String(255), nullable=False)
+    _question = db.Column(db.String(255), nullable=False)
 
-    def __init__(self, prompt, response):
+    def __init__(self, prompt, question, response):
         self._prompt = prompt
         self._response = response
+        self.question = question
     def create(self):
         try:
             db.session.add(self)
@@ -34,6 +36,7 @@ class Chatlog(db.Model):
         return {
             "prompt": self._prompt,
             "response": self._response,
+            "question": self._question
         }
 
     def update(self, data):
@@ -42,6 +45,8 @@ class Chatlog(db.Model):
                 self._prompt = value
             if key == "response":
                 self._response = value
+            if key == "question":
+                self._question = value 
         db.session.commit()
         return self
 
@@ -54,7 +59,28 @@ def initChatlog():
     msg.create()
     with app.app_context():
         db.create_all()  # This will create all tables
-        print("Flashcards table initialized.")
+        print("Chatlog table initialized.")
+
+
+      
+    def ChatLogs():
+        """
+    Initialize the database with example chat logs for testing.
+    """
+    with app.app_context():
+        db.create_all()
+        # Example chat logs
+        log1 = Chatlog(question ="What is the capital of Mexico", response="The capital of MexicoMexico City")
+        log2 = Chatlog(question ="What is the capital of France?", response="The capital of France is Paris.")
+        chat_logs = [log1, log2]
+        for log in chat_logs:
+            try:
+                log.create()
+            except IntegrityError:
+                db.session.rollback()
+                
+                
+
 
 
 

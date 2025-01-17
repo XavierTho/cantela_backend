@@ -1,4 +1,5 @@
 # imports from flask
+from __init__ import app, db
 import google.generativeai as genai
 import requests
 import json
@@ -34,11 +35,12 @@ from api.gradelog import gradelog_api
 from api.profile import profile_api
 from api.tips import tips_api
 
+
 # database Initialization functions
 from model.user import studylog, gradelog, User, initUsers
 from model.section import Section, initSections
 from model.group import Group, initGroups
-from model.channel import Channel, initChannels
+# from model.channel import Channel, initChannels
 from model.post import Post, initPosts
 from model.nestPost import NestPost, initNestPosts
 from model.vote import Vote, initVotes
@@ -242,7 +244,7 @@ def generate_data():
     initUsers()
     initSections()
     initGroups()
-    initChannels()
+    # initChannels()
     initPosts()
     initFlashcards()
     initChatlog()
