@@ -14,6 +14,14 @@ api = Api(studylog_api)
 
 class StudyLogAPI:
     class CRUD(Resource):
+        def get(self):
+            all_studylogs = StudyLog.query.all()
+            studylogs = []
+
+            for log in all_studylogs:
+                studylogs.append(log.read())
+
+            return jsonify(studylogs)
         def post(self):
             try:
                 data = request.get_json()
