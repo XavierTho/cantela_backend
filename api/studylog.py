@@ -1,73 +1,63 @@
-from flask import Blueprint, request, g
+import jwt
+from flask import Blueprint, request, jsonify, current_app, Response, g
 from flask_restful import Api, Resource
+from datetime import datetime
+from __init__ import app, db
 from api.jwt_authorize import token_required
 from model.studylog import StudyLog
+import json
 
-# Blueprint and API
 studylog_api = Blueprint('studylog_api', __name__, url_prefix='/api')
+
 api = Api(studylog_api)
 
-class StudylogAPI:
-    class _CRUD(Resource):
-        @token_required()
+
+class StudyLogAPI:
+    class CRUD(Resource):
         def post(self):
-            """Create a new study session."""
-            current_user = g.current_user
-            data = request.get_json()
-
-            # Validate input
-            if not data or 'subject' not in data or 'hours' not in data:
-                return {"message": "Subject and hours are required"}, 400
+            try:
+                data = request.get_json()
             
-            # Create a new study log
-            new_study_log = StudyLog(
-                user_id=current_user.id,
-                subject=data['subject'],
-                hours_studied=data['hours'],
-                notes=data.get('notes', '')
-            )
-            created_log = new_study_log.create()
-            if created_log:
-                return {"message": "Study session logged successfully", "study_log_id": created_log.id}, 201
-            return {"message": "Failed to create study log"}, 500
+                if not data:
+                    return {'message': 'No input data provided'}, 400
+                
+                user_id = data.get('user_id')
+                subject = data.get('subject')
+                hours_studied = data.get('hours_studied')
+                notes = data.get('notes')
 
-        @token_required()
-        def get(self):
-            """Get all study sessions for the current user."""
-            current_user = g.current_user
-            study_logs = StudyLog.query.filter_by(user_id=current_user.id).all()
-            logs = [{
-                'id': log.id,
-                'subject': log.subject,
-                'hours_studied': log.hours_studied,
-                'notes': log.notes,
-                'date': log.date.strftime('%Y-%m-%d')
-            } for log in study_logs]
-            return logs, 200
+                '''
+                Example payload:
+                {
+                    "user_id": 1,
+                    "subject": "AP Physics",
+                    "hours_studied": 2.5,
+                    "notes": "Studied Newton's Laws of Motion."
+                }
+                '''
+                
+                if not user_id:
+                    return {'message': 'User ID is required'}, 400
+                if not subject:
+                    return {'message': 'Subject is required'}, 400
+                if not hours_studied:
+                    return {'message': 'Hours studied is required'}, 400
+                if not notes:
+                    return {'message': 'Notes is required'}, 400
+                
+                studylog = StudyLog(user_id, subject, hours_studied, notes)
+                print(json.dumps({
+                    "user_id": user_id,
+                    "subject": subject,
+                    "hours_studied": hours_studied,
+                    "notes": notes
+                }))
+                studylog.create()
 
-        @token_required()
-        def put(self):
-            """Update an existing study log."""
-            data = request.get_json()
-            if not data or 'id' not in data:
-                return {"message": "Study Log ID is required"}, 400
-            study_log = StudyLog.query.get(data['id'])
-            if not study_log or study_log.user_id != g.current_user.id:
-                return {"message": "Study Log not found or unauthorized"}, 404
-            updated_log = study_log.update(data)
-            return updated_log.read(), 200
+                return jsonify(studylog.read())
+            
+            except Exception as e:
+                return {'message': f"An error occurred: {str(e)}"}, 500
 
-        @token_required()
-        def delete(self):
-            """Delete a study log."""
-            data = request.get_json()
-            if not data or 'id' not in data:
-                return {"message": "Study Log ID is required"}, 400
-            study_log = StudyLog.query.get(data['id'])
-            if not study_log or study_log.user_id != g.current_user.id:
-                return {"message": "Study Log not found or unauthorized"}, 404
-            study_log.delete()
-            return {"message": "Study Log deleted successfully"}, 200
-
-# Register the resource
-api.add_resource(StudylogAPI._CRUD, '/studylog')
+            
+    api.add_resource(CRUD, '/studylognew')

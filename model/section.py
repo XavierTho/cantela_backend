@@ -135,13 +135,7 @@ def initSections():
         """Tester data for table"""
        
         s1 = Section(name='Home Page') 
-        s2 = Section(name='Shared Interest')
-        s3 = Section(name='Create and Compete')
-        s4 = Section(name='Vote for the GOAT')
-        s5 = Section(name='Share and Care')
-        s6 = Section(name='Rate and Relate')
-        s7 = Section(name='Cantella')
-        sections = [s1, s2, s3, s4, s5, s6, s7]
+        sections = [s1]
         
         for section in sections:
             try:

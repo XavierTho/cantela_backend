@@ -14,15 +14,7 @@ user_classes = db.Table('user_classes',
     db.Column('user_id', db.Integer, db.ForeignKey('users.id'), primary_key=True),
     db.Column('class_id', db.Integer, db.ForeignKey('classes.id'), primary_key=True)
 )
-""" studylog Model """
-class studylog(db.Model):
-    __tablename__ = 'studylogs'
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, nullable=False)
-    subject = db.Column(db.String(100), nullable=False)
-    hours_studied = db.Column(db.Float, nullable=False)
-    notes = db.Column(db.Text)
-    date = db.Column(db.DateTime, default=datetime.utcnow)
+
 
 """ gradelog Model """
 class gradelog(db.Model):
