@@ -1,5 +1,5 @@
 # imports from flask
-#import google.generativeai as genai
+import google.generativeai as genai
 import requests
 import json
 import os
@@ -34,11 +34,12 @@ from api.gradelog import gradelog_api
 from api.profile import profile_api
 from api.tips import tips_api
 
+
 # database Initialization functions
 from model.user import studylog, gradelog, User, initUsers
 from model.section import Section, initSections
 from model.group import Group, initGroups
-from model.channel import Channel, initChannels
+# from model.channel import Channel, initChannels
 from model.post import Post, initPosts
 from model.nestPost import NestPost, initNestPosts
 from model.vote import Vote, initVotes
@@ -46,6 +47,7 @@ from model.flashcard import Flashcard, initFlashcards
 from model.studylog import initStudyLog
 from model.gradelog import initGradeLog
 from model.profile import Profile, initProfiles
+from model.chatlog import Chatlog, initChatlog
 
 # server only Views
 
@@ -74,7 +76,7 @@ login_manager.login_view = "login"
 @login_manager.unauthorized_handler
 def unauthorized_callback():
     return redirect(url_for('login', next=request.path))
-
+ 
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
@@ -241,11 +243,10 @@ def generate_data():
     initUsers()
     initSections()
     initGroups()
-    initChannels()
+    # initChannels()
     initPosts()
-    initNestPosts()
-    initVotes()
     initFlashcards()
+    initChatlog()
 
 def backup_database(db_uri, backup_uri):
     if backup_uri:
@@ -311,6 +312,7 @@ app.cli.add_command(custom_cli)
 def ai_homework_help():
     data = request.get_json()
     question = data.get("question", "")
+    
     if not question:
         return jsonify({"error": "No question provided."}), 400
     try:
@@ -319,6 +321,9 @@ def ai_homework_help():
             f"Under any circumstances, don't answer non-homework-related questions.\n"
             f"Here is your prompt: {question}"
         )
+        
+        new_msg = Chatlog(prompt=question, response=response.text)
+        new_msg.create()
         return jsonify({"response": response.text}), 200
     except Exception as e:
         print("Error:", e)
@@ -361,4 +366,5 @@ if __name__ == "__main__":
         initStudyLog()
         initGradeLog()
         initProfiles()
+        initChatlog()
     app.run(debug=True, host="0.0.0.0", port="8887")
