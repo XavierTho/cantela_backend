@@ -31,6 +31,7 @@ from api.section import section_api
 from api.nestPost import nestPost_api  # Custom format
 from api.messages_api import messages_api  # Messages
 from api.flashcard import flashcard_api
+from api.deck import deck_api
 from api.vote import vote_api
 from api.studylog import studylog_api
 from api.gradelog import gradelog_api
@@ -47,6 +48,7 @@ from model.post import Post, initPosts
 from model.nestPost import NestPost, initNestPosts
 from model.vote import Vote, initVotes
 from model.flashcard import Flashcard, initFlashcards
+from model.deck import Deck, initDecks
 from model.studylog import initStudyLog
 from model.gradelog import initGradeLog
 from model.profile import Profile, initProfiles
@@ -66,6 +68,7 @@ app.register_blueprint(nestPost_api)
 app.register_blueprint(nestImg_api)
 app.register_blueprint(vote_api)
 app.register_blueprint(flashcard_api)
+app.register_blueprint(deck_api)
 app.register_blueprint(flashcard_import_api)
 app.register_blueprint(studylog_api)
 app.register_blueprint(gradelog_api)
@@ -246,10 +249,12 @@ def generate_data():
     initUsers()
     initSections()
     initGroups()
-    # initChannels()
+    initChannels()
     initPosts()
     initFlashcards()
+    initDecks()
     initChatlog()
+
 
 def backup_database(db_uri, backup_uri):
     if backup_uri:
@@ -363,6 +368,7 @@ def create_profile():
 if __name__ == "__main__":
     with app.app_context():
         initFlashcards()
+        initDecks()
         initStudyLog()
         initGradeLog()
         initProfiles()
