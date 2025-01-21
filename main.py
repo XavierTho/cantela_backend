@@ -1,5 +1,5 @@
 # imports from flask
-import googlegenerativeai as genai 
+import googleg.enerativeai as genai 
 import requests
 import json
 import os
