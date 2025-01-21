@@ -249,7 +249,7 @@ def generate_data():
     # initChannels()
     initPosts()
     initFlashcards()
-    initChatlog()
+    initChatLogs()
 
 def backup_database(db_uri, backup_uri):
     if backup_uri:
@@ -366,5 +366,5 @@ if __name__ == "__main__":
         initStudyLog()
         initGradeLog()
         initProfiles()
-        initChatlog()
+        initChatLogs()
     app.run(debug=True, host="0.0.0.0", port="8887")
