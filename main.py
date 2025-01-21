@@ -1,6 +1,8 @@
 # imports from flask
 from __init__ import app, db
 import google.generativeai as genai
+from __init__ import app, db
+import google.generativeai as genai
 import requests
 import json
 import os
@@ -15,8 +17,8 @@ import shutil
 from flask_cors import CORS  # Import CORS
 from flask import Blueprint, jsonify
 from api.flashcard_import import flashcard_import_api
-from flask import Flask
-from __init__ import app
+from model.channel import Channel
+
 
 # import "objects" from "this" project
 from __init__ import app, db, login_manager  # Key Flask objects 
@@ -31,12 +33,12 @@ from api.section import section_api
 from api.nestPost import nestPost_api  # Custom format
 from api.messages_api import messages_api  # Messages
 from api.flashcard import flashcard_api
-from api.deck import deck_api
 from api.vote import vote_api
 from api.studylog import studylog_api
 from api.gradelog import gradelog_api
 from api.profile import profile_api
 from api.tips import tips_api
+
 
 
 # database Initialization functions
@@ -48,7 +50,6 @@ from model.post import Post, initPosts
 from model.nestPost import NestPost, initNestPosts
 from model.vote import Vote, initVotes
 from model.flashcard import Flashcard, initFlashcards
-from model.deck import Deck, initDecks
 from model.studylog import initStudyLog
 from model.gradelog import initGradeLog
 from model.profiles import Profile, initProfiles
@@ -62,13 +63,13 @@ app.register_blueprint(user_api)
 app.register_blueprint(pfp_api) 
 app.register_blueprint(post_api)
 app.register_blueprint(channel_api)
+app.register_blueprint(channel_api)
 app.register_blueprint(group_api)
 app.register_blueprint(section_api)
 app.register_blueprint(nestPost_api)
 app.register_blueprint(nestImg_api)
 app.register_blueprint(vote_api)
 app.register_blueprint(flashcard_api)
-app.register_blueprint(deck_api)
 app.register_blueprint(flashcard_import_api)
 app.register_blueprint(studylog_api)
 app.register_blueprint(gradelog_api)
@@ -254,8 +255,9 @@ def generate_data():
     initPosts()
     initFlashcards()
     initDecks()
-    initChatlog()
+    initChatlogs()
     initProfiles()
+
 
 def backup_database(db_uri, backup_uri):
     if backup_uri:
@@ -272,7 +274,7 @@ def extract_data():
         data['users'] = [user.read() for user in User.query.all()]
         data['sections'] = [section.read() for section in Section.query.all()]
         data['groups'] = [group.read() for group in Group.query.all()]
-        # data['channels'] = [channel.read() for channel in Channel.query.all()]
+        data['channels'] = [channel.read() for channel in Channel.query.all()]
         data['posts'] = [post.read() for post in Post.query.all()]
     return data
 
@@ -296,7 +298,7 @@ def restore_data(data):
         users = User.restore(data['users'])
         _ = Section.restore(data['sections'])
         _ = Group.restore(data['groups'], users)
-      #   _ = Channel.restore(data['channels'])
+        _ = Channel.restore(data['channels'])
         _ = Post.restore(data['posts'])
     print("Data restored to the new database.")
 
@@ -326,9 +328,12 @@ def ai_homework_help():
         return jsonify({"error": "No question provided."}), 400
     try:
         response = model.generate_content(
-            f"Your name is CanTeach. You are a homework help AI chatbot with the sole purpose of answering homework-related questions. Under any circumstances, don't answer non-homework-related questions.\nHere Is your Prompt: {question}")
+            f"Your name is CanTeach. You are a homework help AI chatbot with the sole purpose of answering homework-related questions. "
+            f"Under any circumstances, don't answer non-homework-related questions.\n"
+            f"Here is your prompt: {question}"
+        )
         
-        new_msg = ChatLog(question=question, response=response.text)
+        new_msg = Chatlog(prompt=question, response=response.text)
         new_msg.create()
         return jsonify({"response": response.text}), 200
     except Exception as e:
@@ -433,9 +438,8 @@ def remove_duplicates():
 if __name__ == "__main__":
     with app.app_context():
         initFlashcards()
-        initDecks()
         initStudyLog()
         initGradeLog()
         initProfiles()
-        remove_duplicates()
+        initChatlog()
     app.run(debug=True, host="0.0.0.0", port="8887")
