@@ -13,14 +13,6 @@ Goto the scripts directory:
 Or run from the root of the project:
 > scripts/db_migrate.py
 
-General Process outline:
-0. Warning to the user.
-1. Old data extraction.  An API has been created in the old project ...
-  - Extract Data: retrieves data from the specified tables in the old database.
-  - Transform Data: the API to JSON format understood by the new project.
-2. New schema.  The schema is created in "this" new database.
-3. Load Data: The bulk load API in "this" project inserts the data using required business logic.
-
 """
 import shutil
 import sys
@@ -29,7 +21,7 @@ import os
 # Add the directory containing main.py to the Python path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 # Import application object
-from main import app, db, generate_data
+from main import app, db, generate_data, initLeaderboard
 
 # Backup the old database
 def backup_database(db_uri, backup_uri):
@@ -78,6 +70,11 @@ def main():
             # Create the tables defined in the project
             print("Generating data.")
             generate_data()
+            
+            # Initialize leaderboard data
+            print("Initializing leaderboard data...")
+            initLeaderboard()
+            print("Leaderboard data initialized successfully.")
                         
     except Exception as e:
         print(f"An error occurred: {e}")

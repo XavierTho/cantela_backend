@@ -1,15 +1,22 @@
 {
-    // Use IntelliSense to learn about possible attributes.
-    // Hover to view descriptions of existing attributes.
-    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
+        
         {
-            "name": "Python Debugger: Current File",
-            "type": "debugpy",
+            "name": "Flask Debugger",
+            "type": "python",
             "request": "launch",
-            "program": "${file}",
-            "console": "integratedTerminal"
+            "module": "flask",
+            "env": {
+                "FLASK_APP": "app.py", // Ensure 'app.py' is your Flask entry file
+                "FLASK_ENV": "development"
+            },
+            "args": [
+                "run",
+                "--no-debugger", // Optional: Prevent Flask from using its own debugger
+                "--no-reload"    // Optional: Prevent auto-reload, which can interfere with VSCode's debugger
+            ],
+            "jinja": true
         }
     ]
 }
