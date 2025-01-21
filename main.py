@@ -30,30 +30,28 @@ from api.section import section_api
 from api.nestPost import nestPost_api  # Custom format
 from api.messages_api import messages_api  # Messages
 from api.flashcard import flashcard_api
-from api.deck import deck_api
 from api.vote import vote_api
 from api.studylog import studylog_api
 from api.gradelog import gradelog_api
 from api.profile import profile_api
 from api.tips import tips_api
-from api.leaderboard import leaderboard_api
+
+
 
 # database Initialization functions
 from model.user import studylog, gradelog, User, initUsers
 from model.section import Section, initSections
 from model.group import Group, initGroups
 # from model.channel import Channel, initChannels
-# from model.channel import Channel, initChannels
 from model.post import Post, initPosts
 from model.nestPost import NestPost, initNestPosts
 from model.vote import Vote, initVotes
 from model.flashcard import Flashcard, initFlashcards
-from model.deck import Deck, initDecks
 from model.studylog import initStudyLog
 from model.gradelog import initGradeLog
 from model.profile import Profile, initProfiles
-from model.leaderboard import LeaderboardEntry, initLeaderboard
-
+from model.chatlog import Chatlog, initChatLogs
+from model.gradelog import GradeLog
 
 # server only Views
 
@@ -62,23 +60,19 @@ app.register_blueprint(messages_api)
 app.register_blueprint(user_api)
 app.register_blueprint(pfp_api) 
 app.register_blueprint(post_api)
-app.register_blueprint(channel_api) 
+app.register_blueprint(channel_api)
+app.register_blueprint(channel_api)
 app.register_blueprint(group_api)
 app.register_blueprint(section_api)
 app.register_blueprint(nestPost_api)
 app.register_blueprint(nestImg_api)
 app.register_blueprint(vote_api)
 app.register_blueprint(flashcard_api)
-app.register_blueprint(deck_api)
 app.register_blueprint(flashcard_import_api)
 app.register_blueprint(studylog_api)
 app.register_blueprint(gradelog_api)
 app.register_blueprint(profile_api)
 app.register_blueprint(tips_api)
-if 'leaderboard_api' not in app.blueprints:
-    app.register_blueprint(leaderboard_api)
-
-
 
 
 # Tell Flask-Login the view function name of your login route
@@ -249,6 +243,7 @@ def get_id():
 # Custom CLI Commands
 custom_cli = AppGroup('custom', help='Custom commands')
 
+
 @custom_cli.command('generate_data')
 def generate_data():
     initUsers()
@@ -257,8 +252,9 @@ def generate_data():
     # initChannels()
     initPosts()
     initFlashcards()
-    initLeaderboard()
-
+    initDecks()
+    initChatlogs()
+    initProfiles()
 
 
 def backup_database(db_uri, backup_uri):
@@ -275,8 +271,9 @@ def extract_data():
     with app.app_context():
         data['users'] = [user.read() for user in User.query.all()]
         data['sections'] = [section.read() for section in Section.query.all()]
+        data['gradelog'] = [gradelog.read() for gradelog in GradeLog.query.all()]
         data['groups'] = [group.read() for group in Group.query.all()]
-        # data['channels'] = [channel.read() for channel in Channel.query.all()]
+        data['channels'] = [channel.read() for channel in Channel.query.all()]
         data['posts'] = [post.read() for post in Post.query.all()]
     return data
 
@@ -300,7 +297,7 @@ def restore_data(data):
         users = User.restore(data['users'])
         _ = Section.restore(data['sections'])
         _ = Group.restore(data['groups'], users)
-      #   _ = Channel.restore(data['channels'])
+        _ = Channel.restore(data['channels'])
         _ = Post.restore(data['posts'])
     print("Data restored to the new database.")
 
@@ -318,11 +315,8 @@ def restore_data_command():
 app.cli.add_command(custom_cli)
 
 
-
-# AI Homework Help Endpoint
 genai.configure(api_key="AIzaSyAdopg5pOVdNN8eveu5ZQ4O4u4IZuK9NaY")
 model = genai.GenerativeModel('gemini-pro')
-
 
 @app.route('/api/ai/help', methods=['POST'])
 def ai_homework_help():
@@ -333,9 +327,12 @@ def ai_homework_help():
         return jsonify({"error": "No question provided."}), 400
     try:
         response = model.generate_content(
-            f"Your name is CanTeach. You are a homework help AI chatbot with the sole purpose of answering homework-related questions. Under any circumstances, don't answer non-homework-related questions.\nHere Is your Prompt: {question}")
+            f"Your name is CanTeach. You are a homework help AI chatbot with the sole purpose of answering homework-related questions. "
+            f"Under any circumstances, don't answer non-homework-related questions.\n"
+            f"Here is your prompt: {question}"
+        )
         
-        new_msg = ChatLog(question=question, response=response.text)
+        new_msg = Chatlog(prompt=question, response=response.text)
         new_msg.create()
         return jsonify({"response": response.text}), 200
     except Exception as e:
@@ -343,42 +340,105 @@ def ai_homework_help():
         return jsonify({"error": str(e)}), 500
     
 
+# Add a GET route to retrieve all profiles
 @app.route('/profiles', methods=['GET'])
-def get_profiles():
-    profiles = Profile.query.all()
-    return jsonify([profile.read() for profile in profiles])
-#get all profiles
+def get_all_profiles():
+    """
+    Retrieve all profiles from the database.
 
-@app.route('/profiles/<int:id>', methods=['GET'])
-def get_profile(id):
-    profile = Profile.query.get_or_404(id)
-    return jsonify(profile.read())
-#get a specific profile
+    Returns:
+        JSON response with a list of all profiles.
+    """
+    try:
+        # Query all profiles from the database
+        profiles = Profile.query.all()
+        # Convert profiles to a list of dictionaries
+        profiles_data = [profile.read() for profile in profiles]
+        return jsonify(profiles_data), 200  # Return the profiles as JSON
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
+# Add a POST route for creating a new profile
 @app.route('/profiles', methods=['POST'])
 def create_profile():
-    data = request.json
-    new_profile = Profile(
-        name=data['name'],
-        classes=data['classes'],
-        favorite_class=data['favorite_class'],
-        favorite_flashcard=data['favorite_flashcard'],
-        grade=data['grade'],
-        user_id=data['user_id']
+    """
+    Create a new profile using data from the request body.
+
+    Request Body:
+        {
+            "name": "Alice Johnson",
+            "classes": "Math, Science, History",
+            "favorite_class": "Science",
+            "grade": "A"
+        }
+
+    Returns:
+        JSON response with the created profile or an error message.
+    """
+    data = request.get_json()  # Get the JSON data from the request body
+
+    # Validate the required fields
+    if not all(key in data for key in ("name", "classes", "favorite_class", "grade")):
+        return jsonify({"error": "Missing one or more required fields"}), 400
+
+    # Create a new profile instance
+    profile = Profile(
+        name=data["name"],
+        classes=data["classes"],
+        favorite_class=data["favorite_class"],
+        grade=data["grade"]
     )
+
+    # Save the profile to the database
     try:
-        new_profile.create()
-        return jsonify(new_profile.read()), 201
+        profile.create()
+        return jsonify(profile.read()), 201  # Return the created profile as JSON
     except Exception as e:
-        return jsonify({"error": str(e)}), 400
-#create new profile post
-    
+        return jsonify({"error": str(e)}), 500
+
+
+# Add a DELETE route to delete a profile by ID
+@app.route('/profiles/<int:profile_id>', methods=['DELETE'])
+def delete_profile(profile_id):
+    """
+    Delete a profile from the database by its ID.
+
+    Args:
+        profile_id (int): The ID of the profile to delete.
+
+    Returns:
+        JSON response indicating success or failure.
+    """
+    try:
+        # Query the profile by ID
+        profile = Profile.query.get(profile_id)
+        
+        # Check if the profile exists
+        if not profile:
+            return jsonify({"error": "Profile not found"}), 404
+        
+        # Delete the profile
+        profile.delete()
+        return jsonify({"message": f"Profile with ID {profile_id} has been deleted"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+def remove_duplicates():
+    with app.app_context():
+        seen_names = set()
+        for profile in Profile.query.all():
+            if profile.name in seen_names:
+                db.session.delete(profile)
+            else:
+                seen_names.add(profile.name)
+        db.session.commit()
+
+
 if __name__ == "__main__":
     with app.app_context():
         initFlashcards()
-        initDecks()
         initStudyLog()
         initGradeLog()
         initProfiles()
-        initLeaderboard()
+        initChatLogs()
     app.run(debug=True, host="0.0.0.0", port="8887")
