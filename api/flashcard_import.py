@@ -1,6 +1,7 @@
 import requests
 from flask import Blueprint, jsonify, request
 from model.flashcard import Flashcard
+from model.deck import Deck  # Import Deck model
 from __init__ import db
 
 flashcard_import_api = Blueprint('flashcard_import_api', __name__, url_prefix='/api')
@@ -26,21 +27,44 @@ def import_flashcards():
         trivia_data = response.json()
         results = trivia_data.get("results", [])
 
+        if not results:
+            return jsonify({"error": "No flashcards fetched from the external API"}), 400
+
+        # Create a new deck
+        deck_title = f"Imported Deck ({difficulty.capitalize()})"
+        if category:
+            deck_title += f" - Category {category}"
+
+        user_id = 1  # Replace with actual user_id if authentication is implemented
+        new_deck = Deck(title=deck_title, user_id=user_id)
+        db.session.add(new_deck)
+        db.session.commit()
+
         flashcards = []
         for item in results:
             question = item.get("question")
             answer = item.get("correct_answer")
             if question and answer:
-                flashcard = Flashcard(title=question, content=answer, user_id=1)  # Replace user_id as needed
+                flashcard = Flashcard(
+                    title=question,
+                    content=answer,
+                    user_id=user_id,
+                    deck_id=new_deck.id  # Associate flashcard with the new deck
+                )
                 db.session.add(flashcard)
                 flashcards.append(flashcard.read())
 
         db.session.commit()
         return jsonify({
-            "message": f"{len(flashcards)} flashcards imported successfully!",
-            "flashcards": flashcards
+            "message": f"{len(flashcards)} flashcards imported and added to deck '{deck_title}'!",
+            "deck": {
+                "id": new_deck.id,
+                "title": new_deck.title,
+                "flashcards": flashcards
+            }
         }), 201
 
     except Exception as e:
+        db.session.rollback()
         print("Error:", e)
         return jsonify({"error": str(e)}), 500
