@@ -2,7 +2,6 @@
 from __init__ import app, db
 import google.generativeai as genai
 from __init__ import app, db
-import google.generativeai as genai
 import requests
 import json
 import os
@@ -52,7 +51,7 @@ from model.vote import Vote, initVotes
 from model.flashcard import Flashcard, initFlashcards
 from model.studylog import initStudyLog
 from model.gradelog import initGradeLog
-from model.profile import Profile, initProfiles
+from model.profiles import Profile, initProfiles
 from model.chatlog import Chatlog, initChatLogs
 from model.gradelog import GradeLog
 
