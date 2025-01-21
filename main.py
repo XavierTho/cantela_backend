@@ -14,6 +14,8 @@ import shutil
 from flask_cors import CORS  # Import CORS
 from flask import Blueprint, jsonify
 from api.flashcard_import import flashcard_import_api
+from flask import Flask
+from __init__ import app
 
 # import "objects" from "this" project
 from __init__ import app, db, login_manager  # Key Flask objects 
@@ -46,6 +48,7 @@ from model.flashcard import Flashcard, initFlashcards
 from model.studylog import initStudyLog
 from model.gradelog import initGradeLog
 from model.profiles import Profile, initProfiles
+
 
 # server only Views
 
@@ -236,6 +239,7 @@ def get_id():
 # Custom CLI Commands
 custom_cli = AppGroup('custom', help='Custom commands')
 
+
 @custom_cli.command('generate_data')
 def generate_data():
     initUsers()
@@ -383,10 +387,48 @@ def create_profile():
         return jsonify({"error": str(e)}), 500
 
 
+# Add a DELETE route to delete a profile by ID
+@app.route('/profiles/<int:profile_id>', methods=['DELETE'])
+def delete_profile(profile_id):
+    """
+    Delete a profile from the database by its ID.
+
+    Args:
+        profile_id (int): The ID of the profile to delete.
+
+    Returns:
+        JSON response indicating success or failure.
+    """
+    try:
+        # Query the profile by ID
+        profile = Profile.query.get(profile_id)
+        
+        # Check if the profile exists
+        if not profile:
+            return jsonify({"error": "Profile not found"}), 404
+        
+        # Delete the profile
+        profile.delete()
+        return jsonify({"message": f"Profile with ID {profile_id} has been deleted"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+def remove_duplicates():
+    with app.app_context():
+        seen_names = set()
+        for profile in Profile.query.all():
+            if profile.name in seen_names:
+                db.session.delete(profile)
+            else:
+                seen_names.add(profile.name)
+        db.session.commit()
+
+
 if __name__ == "__main__":
     with app.app_context():
         initFlashcards()
         initStudyLog()
         initGradeLog()
         initProfiles()
+        remove_duplicates()
     app.run(debug=True, host="0.0.0.0", port="8887")
