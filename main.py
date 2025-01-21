@@ -275,7 +275,7 @@ def extract_data():
         data['sections'] = [section.read() for section in Section.query.all()]
         data['gradelog'] = [gradelog.read() for gradelog in GradeLog.query.all()]
         data['groups'] = [group.read() for group in Group.query.all()]
-        data['channels'] = [channel.read() for channel in Channel.query.all()]
+#        data['channels'] = [channel.read() for channel in Channel.query.all()]
         data['posts'] = [post.read() for post in Post.query.all()]
     return data
 
@@ -299,7 +299,7 @@ def restore_data(data):
         users = User.restore(data['users'])
         _ = Section.restore(data['sections'])
         _ = Group.restore(data['groups'], users)
-        _ = Channel.restore(data['channels'])
+ #       _ = Channel.restore(data['channels'])
         _ = Post.restore(data['posts'])
     print("Data restored to the new database.")
 
@@ -334,7 +334,7 @@ def ai_homework_help():
             f"Here is your prompt: {question}"
         )
         
-        new_msg = Chatlog(prompt=question, response=response.text)
+        new_msg = ChatLog(prompt=question, response=response.text)
         new_msg.create()
         return jsonify({"response": response.text}), 200
     except Exception as e:
