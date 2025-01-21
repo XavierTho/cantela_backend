@@ -250,7 +250,7 @@ def generate_data():
     initUsers()
     initSections()
     initGroups()
-    initChannels()
+    # initChannels()
     initPosts()
     initFlashcards()
     initDecks()
