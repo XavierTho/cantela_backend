@@ -52,7 +52,7 @@ from model.flashcard import Flashcard, initFlashcards
 from model.studylog import initStudyLog
 from model.gradelog import initGradeLog
 from model.profiles import Profile, initProfiles
-from model.chatlog import Chatlog, initChatLogs
+from model.chatlog import ChatLog, initChatLogs
 from model.gradelog import GradeLog
 
 # server only Views
