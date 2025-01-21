@@ -48,7 +48,7 @@ from model.flashcard import Flashcard, initFlashcards
 from model.studylog import initStudyLog
 from model.gradelog import initGradeLog
 from model.profile import Profile, initProfiles
-from model.chatlog import Chatlog, initChatlog
+from model.chatlog import ChatLog, initChatLogs
 
 # server only Views
 
@@ -247,7 +247,7 @@ def generate_data():
     # initChannels()
     initPosts()
     initFlashcards()
-    initChatlog()
+    initChatLogs()
 
 def backup_database(db_uri, backup_uri):
     if backup_uri:
@@ -264,7 +264,7 @@ def extract_data():
         data['users'] = [user.read() for user in User.query.all()]
         data['sections'] = [section.read() for section in Section.query.all()]
         data['groups'] = [group.read() for group in Group.query.all()]
-        data['channels'] = [channel.read() for channel in Channel.query.all()]
+        # data['channels'] = [channel.read() for channel in Channel.query.all()]
         data['posts'] = [post.read() for post in Post.query.all()]
     return data
 
@@ -288,7 +288,7 @@ def restore_data(data):
         users = User.restore(data['users'])
         _ = Section.restore(data['sections'])
         _ = Group.restore(data['groups'], users)
-        _ = Channel.restore(data['channels'])
+      #   _ = Channel.restore(data['channels'])
         _ = Post.restore(data['posts'])
     print("Data restored to the new database.")
 
@@ -305,9 +305,9 @@ def restore_data_command():
 
 app.cli.add_command(custom_cli)
 
-# AI Homework Help Endpoint
-# genai.configure(api_key="AIzaSyAdopg5pOVdNN8eveu5ZQ4O4u4IZuK9NaY")
-# model = genai.GenerativeModel('gemini-pro')
+
+genai.configure(api_key="AIzaSyAdopg5pOVdNN8eveu5ZQ4O4u4IZuK9NaY")
+model = genai.GenerativeModel('gemini-pro')
 
 @app.route('/api/ai/help', methods=['POST'])
 def ai_homework_help():
@@ -318,12 +318,9 @@ def ai_homework_help():
         return jsonify({"error": "No question provided."}), 400
     try:
         response = model.generate_content(
-            f"Your name is CanTeach. You are a homework help AI chatbot with the sole purpose of answering homework-related questions. "
-            f"Under any circumstances, don't answer non-homework-related questions.\n"
-            f"Here is your prompt: {question}"
-        )
+            f"Your name is CanTeach. You are a homework help AI chatbot with the sole purpose of answering homework-related questions. Under any circumstances, don't answer non-homework-related questions.\nHere Is your Prompt: {question}")
         
-        new_msg = Chatlog(prompt=question, response=response.text)
+        new_msg = ChatLog(question=question, response=response.text)
         new_msg.create()
         return jsonify({"response": response.text}), 200
     except Exception as e:
@@ -367,5 +364,5 @@ if __name__ == "__main__":
         initStudyLog()
         initGradeLog()
         initProfiles()
-        initChatlog()
+        initChatLogs()
     app.run(debug=True, host="0.0.0.0", port="8887")

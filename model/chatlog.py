@@ -1,83 +1,107 @@
-from sqlalchemy.exc import IntegrityError
+
+import logging
+from sqlite3 import IntegrityError
 from __init__ import app, db
-
-class Chatlog(db.Model):
-    """
-    Flashcard Model
-    
-    Attributes:
-        id (int): Primary key for the flashcard.
-        title (str): Title of the flashcard.
-        content (str): Content of the flashcard.
-        user_id (int): ID of the user who owns this flashcard.
-    """
-    __tablename__ = 'chatlog'
-
+class ChatLog(db.Model):
+    __tablename__ = 'chat_logs'
     id = db.Column(db.Integer, primary_key=True)
-    _prompt = db.Column(db.String(255), nullable=False)
-    _response = db.Column(db.String(255), nullable=False)
-    _question = db.Column(db.String(255), nullable=False)
-
-    def __init__(self, prompt, question, response):
-        self._prompt = prompt
+    _question = db.Column(db.String(500), nullable=False)
+    _response = db.Column(db.String(2000), nullable=False)
+    def __init__(self, question, response):
+        """
+        Constructor to initialize ChatLog object.
+        Args:
+            question (str): The user's question.
+            response (str): The AI's response.
+        """
+        self._question = question
         self._response = response
-        self.question = question
+    @property
+    def question(self):
+        return self._question
+    @property
+    def response(self):
+        return self._response
     def create(self):
+        """
+        Add the object to the database and commit the transaction.
+        Raises:
+            Exception: If an error occurs during the commit.
+        """
         try:
             db.session.add(self)
             db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            raise e
+    def read(self):
+        """
+        Retrieve the object's data as a dictionary.
+        Returns:
+            dict: A dictionary containing the question and response.
+        """
+        return {
+            'id': self.id,
+            'question': self._question,
+            'response': self._response,
+        }
+    def update(self, updates):
+        # Extract the updated values from the dictionary
+        question = updates.get('question', None)
+        response = updates.get('response', None)
+        # Update attributes if new values are provided
+        if question:
+            self._question = question
+        if response:
+            self._response = response
+        # Attempt to commit the changes to the database
+        try:
+            db.session.commit()
         except IntegrityError:
             db.session.rollback()
+            logging.warning(f"IntegrityError: Could not update chat log with ID '{self.id}'.")
             return None
         return self
-    
-
-    def read(self):
-        return {
-            "prompt": self._prompt,
-            "response": self._response,
-            "question": self._question
-        }
-
-    def update(self, data):
-        for key, value in data.items():
-            if key == "prompt":
-                self._prompt = value
-            if key == "response":
-                self._response = value
-            if key == "question":
-                self._question = value 
-        db.session.commit()
-        return self
-
-    def delete(self):
-        db.session.delete(self)
-        db.session.commit()
-
-def initChatlog():
-    msg = Chatlog(prompt="What is the capital of China?", response="Beijing")
-    msg.create()
-    with app.app_context():
-        db.create_all()  # This will create all tables
-        print("Chatlog table initialized.")
-
-
-      
-    def ChatLogs():
+    @staticmethod
+    def restore(data):
         """
+        Restore data from a list of dictionaries into the database.
+        Args:
+            data (list): List of dictionaries containing chat logs.
+        Returns:
+            dict: A dictionary of restored chat logs.
+        """
+        chat_logs = {}
+        for log_data in data:
+            _ = log_data.pop('id', None)
+            question = log_data.get("question", None)
+            log = ChatLog.query.filter_by(_question=question).first()
+            if log:
+                log.update(log_data)
+            else:
+                log = ChatLog(**log_data)
+                log.create()
+        return chat_logs
+def initChatLogs():
+    """
     Initialize the database with example chat logs for testing.
     """
     with app.app_context():
         db.create_all()
         # Example chat logs
-        log1 = Chatlog(question ="What is the capital of Mexico", response="The capital of MexicoMexico City")
-        log2 = Chatlog(question ="What is the capital of France?", response="The capital of France is Paris.")
+        log1 = ChatLog(question="How far is the moon", response="The Moon is 238,900 mi")
+        log2 = ChatLog(question="Whats the capital of China", response="The capital of China is Beijing.")
         chat_logs = [log1, log2]
         for log in chat_logs:
             try:
                 log.create()
             except IntegrityError:
                 db.session.rollback()
+# Ensuring the table is created
+if __name__ == "__main__":
+    with app.app_context():
+        db.create_all()
+        print("Table creation complete.")
                 
                 
 
