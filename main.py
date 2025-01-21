@@ -42,7 +42,7 @@ from api.tips import tips_api
 
 
 # database Initialization functions
-from model.user import studylog, gradelog, User, initUsers
+from model.user import gradelog, User, initUsers
 from model.section import Section, initSections
 from model.group import Group, initGroups
 # from model.channel import Channel, initChannels
@@ -52,9 +52,10 @@ from model.vote import Vote, initVotes
 from model.flashcard import Flashcard, initFlashcards
 from model.studylog import initStudyLog
 from model.gradelog import initGradeLog
-from model.profile import Profile, initProfiles
-from model.chatlog import Chatlog, initChatLogs
+from model.profiles import Profile, initProfiles
+from model.chatlog import ChatLog, initChatLogs
 from model.gradelog import GradeLog
+
 
 # server only Views
 
@@ -118,36 +119,6 @@ def login():
 def logout():
     # Your existing logout logic here
     pass
-
-# New routes for study tracker
-@app.route('/api/study-tracker/log', methods=['POST'])
-def log_study_session():
-    try:
-        data = request.json
-        new_log = studylog(
-            user_id=data['user_id'],
-            subject=data['subject'],
-            hours_studied=data['hours'],
-            notes=data.get('notes', '')
-        )
-        db.session.add(new_log)
-        db.session.commit()
-        return jsonify({'message': 'Study session logged successfully'}), 200
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/api/study-tracker/progress/<int:user_id>', methods=['GET'])
-def get_study_progress(user_id):
-    try:
-        logs = studylog.query.filter_by(user_id=user_id).all()
-        data = [
-            {'subject': log.subject, 'hours': log.hours_studied, 'date': log.date.strftime('%Y-%m-%d')}
-            for log in logs
-        ]
-        return jsonify(data), 200
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-    
 
 # Routes for grade logger
 @app.route('/api/grade-tracker/log', methods=['POST'])
@@ -256,7 +227,7 @@ def generate_data():
     initPosts()
     initFlashcards()
     initDecks()
-    initChatlogs()
+    initChatLogs()
     initProfiles()
 
 
