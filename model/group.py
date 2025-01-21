@@ -174,7 +174,12 @@ def initGroups():
             Group(name='General', section_id=home_page_section.id, moderators=[User.query.get(1)]),
             Group(name='Support', section_id=home_page_section.id, moderators=[User.query.get(1)])
         ]
-        
+
+        # Cantella Groups:
+        cantella_section = Section.query.filter_by(_name='Cantella').first()
+        groups += [
+            Group(name='Cantella', section_id=cantella_section.id, moderators=[User.query.get(1)])
+        ]
 
         for group in groups:
             try:

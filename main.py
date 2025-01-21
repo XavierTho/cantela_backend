@@ -1,16 +1,22 @@
 # imports from flask
+from __init__ import app, db
 import google.generativeai as genai
 import requests
 import json
 import os
 from urllib.parse import urljoin, urlparse
-from flask import abort, redirect, render_template, request, send_from_directory, url_for, jsonify, current_app, Blueprint
-from flask_login import current_user, login_user, logout_user, login_required
+from flask import abort, redirect, render_template, request, send_from_directory, url_for, jsonify
+from flask_login import current_user, login_user, logout_user
 from flask.cli import AppGroup
+from flask_login import current_user, login_required
+from flask import current_app
 from werkzeug.security import generate_password_hash
 import shutil
 from flask_cors import CORS  # Import CORS
+from flask import Blueprint, jsonify
 from api.flashcard_import import flashcard_import_api
+from model.channel import Channel
+
 
 # import "objects" from "this" project
 from __init__ import app, db, login_manager  # Key Flask objects 
@@ -25,24 +31,30 @@ from api.section import section_api
 from api.nestPost import nestPost_api  # Custom format
 from api.messages_api import messages_api  # Messages
 from api.flashcard import flashcard_api
+from api.deck import deck_api
 from api.vote import vote_api
 from api.studylog import studylog_api
 from api.gradelog import gradelog_api
 from api.profile import profile_api
 from api.tips import tips_api
 
+
 # database Initialization functions
-from model.user import gradelog, User, initUsers
+from model.user import studylog, gradelog, User, initUsers
 from model.section import Section, initSections
 from model.group import Group, initGroups
-from model.channel import Channel, initChannels
+# from model.channel import Channel, initChannels
 from model.post import Post, initPosts
 from model.nestPost import NestPost, initNestPosts
 from model.vote import Vote, initVotes
 from model.flashcard import Flashcard, initFlashcards
-from model.studylog import StudyLog, initStudyLog
+from model.deck import Deck, initDecks
+from model.studylog import initStudyLog
 from model.gradelog import initGradeLog
 from model.profile import Profile, initProfiles
+from model.chatlog import ChatLog, initChatLogs
+
+# server only Views
 
 # register URIs for API endpoints
 app.register_blueprint(messages_api)
@@ -56,11 +68,13 @@ app.register_blueprint(nestPost_api)
 app.register_blueprint(nestImg_api)
 app.register_blueprint(vote_api)
 app.register_blueprint(flashcard_api)
+app.register_blueprint(deck_api)
 app.register_blueprint(flashcard_import_api)
+app.register_blueprint(studylog_api)
 app.register_blueprint(gradelog_api)
 app.register_blueprint(profile_api)
 app.register_blueprint(tips_api)
-app.register_blueprint(studylog_api)
+
 
 # Tell Flask-Login the view function name of your login route
 login_manager.login_view = "login"
@@ -68,7 +82,7 @@ login_manager.login_view = "login"
 @login_manager.unauthorized_handler
 def unauthorized_callback():
     return redirect(url_for('login', next=request.path))
-
+ 
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
@@ -82,7 +96,6 @@ def is_safe_url(target):
     ref_url = urlparse(request.host_url)
     test_url = urlparse(urljoin(request.host_url, target))
     return test_url.scheme in ('http', 'https') and ref_url.netloc == test_url.netloc
-
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -101,10 +114,38 @@ def login():
 
 @app.route('/logout')
 def logout():
-    logout_user()
-    return redirect(url_for('login'))
+    # Your existing logout logic here
+    pass
 
 # New routes for study tracker
+@app.route('/api/study-tracker/log', methods=['POST'])
+def log_study_session():
+    try:
+        data = request.json
+        new_log = studylog(
+            user_id=data['user_id'],
+            subject=data['subject'],
+            hours_studied=data['hours'],
+            notes=data.get('notes', '')
+        )
+        db.session.add(new_log)
+        db.session.commit()
+        return jsonify({'message': 'Study session logged successfully'}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/study-tracker/progress/<int:user_id>', methods=['GET'])
+def get_study_progress(user_id):
+    try:
+        logs = studylog.query.filter_by(user_id=user_id).all()
+        data = [
+            {'subject': log.subject, 'hours': log.hours_studied, 'date': log.date.strftime('%Y-%m-%d')}
+            for log in logs
+        ]
+        return jsonify(data), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    
 
 # Routes for grade logger
 @app.route('/api/grade-tracker/log', methods=['POST'])
@@ -126,6 +167,7 @@ def log_grade():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+
 @app.route('/api/grade-tracker/progress/<int:user_id>', methods=['GET'])
 def get_grade_progress(user_id):
     """
@@ -144,6 +186,7 @@ def get_grade_progress(user_id):
         return jsonify(data), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
 
 @app.errorhandler(404)
 def page_not_found(e):
@@ -197,6 +240,7 @@ def reset_password(user_id):
 def get_id():
     return jsonify({"message": "API is working!"}), 200
 
+
 # Custom CLI Commands
 custom_cli = AppGroup('custom', help='Custom commands')
 
@@ -207,10 +251,10 @@ def generate_data():
     initGroups()
     initChannels()
     initPosts()
-    initNestPosts()
-    initVotes()
     initFlashcards()
-    initStudyLog()
+    initDecks()
+    initChatlog()
+
 
 def backup_database(db_uri, backup_uri):
     if backup_uri:
@@ -227,9 +271,8 @@ def extract_data():
         data['users'] = [user.read() for user in User.query.all()]
         data['sections'] = [section.read() for section in Section.query.all()]
         data['groups'] = [group.read() for group in Group.query.all()]
-        data['channels'] = [channel.read() for channel in Channel.query.all()]
+        # data['channels'] = [channel.read() for channel in Channel.query.all()]
         data['posts'] = [post.read() for post in Post.query.all()]
-        data['studylogs'] = [log.read() for log in StudyLog.query.all()]
     return data
 
 def save_data_to_json(data, directory='backup'):
@@ -252,9 +295,8 @@ def restore_data(data):
         users = User.restore(data['users'])
         _ = Section.restore(data['sections'])
         _ = Group.restore(data['groups'], users)
-        _ = Channel.restore(data['channels'])
+      #   _ = Channel.restore(data['channels'])
         _ = Post.restore(data['posts'])
-        _ = StudyLog.restore(data['studylogs'])
     print("Data restored to the new database.")
 
 @custom_cli.command('backup_data')
@@ -270,7 +312,7 @@ def restore_data_command():
 
 app.cli.add_command(custom_cli)
 
-# AI Homework Help Endpoint
+
 genai.configure(api_key="AIzaSyAdopg5pOVdNN8eveu5ZQ4O4u4IZuK9NaY")
 model = genai.GenerativeModel('gemini-pro')
 
@@ -278,28 +320,32 @@ model = genai.GenerativeModel('gemini-pro')
 def ai_homework_help():
     data = request.get_json()
     question = data.get("question", "")
+    
     if not question:
         return jsonify({"error": "No question provided."}), 400
     try:
         response = model.generate_content(
-            f"Your name is CanTeach. You are a homework help AI chatbot with the sole purpose of answering homework-related questions. "
-            f"Under any circumstances, don't answer non-homework-related questions.\n"
-            f"Here is your prompt: {question}"
-        )
+            f"Your name is CanTeach. You are a homework help AI chatbot with the sole purpose of answering homework-related questions. Under any circumstances, don't answer non-homework-related questions.\nHere Is your Prompt: {question}")
+        
+        new_msg = ChatLog(question=question, response=response.text)
+        new_msg.create()
         return jsonify({"response": response.text}), 200
     except Exception as e:
         print("Error:", e)
         return jsonify({"error": str(e)}), 500
+    
 
 @app.route('/profiles', methods=['GET'])
 def get_profiles():
     profiles = Profile.query.all()
     return jsonify([profile.read() for profile in profiles])
+#get all profiles
 
 @app.route('/profiles/<int:id>', methods=['GET'])
 def get_profile(id):
     profile = Profile.query.get_or_404(id)
     return jsonify(profile.read())
+#get a specific profile
 
 @app.route('/profiles', methods=['POST'])
 def create_profile():
@@ -317,6 +363,14 @@ def create_profile():
         return jsonify(new_profile.read()), 201
     except Exception as e:
         return jsonify({"error": str(e)}), 400
-
+#create new profile post
+    
 if __name__ == "__main__":
+    with app.app_context():
+        initFlashcards()
+        initDecks()
+        initStudyLog()
+        initGradeLog()
+        initProfiles()
+        initChatlog()
     app.run(debug=True, host="0.0.0.0", port="8887")
