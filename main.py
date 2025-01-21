@@ -1,6 +1,5 @@
 # imports from flask
-from __init__ import app, db
-import google.generativeai as genai
+import google.generativeai as genai 
 import requests
 import json
 import os
@@ -37,12 +36,13 @@ from api.studylog import studylog_api
 from api.gradelog import gradelog_api
 from api.profile import profile_api
 from api.tips import tips_api
-
+from api.leaderboard import leaderboard_api
 
 # database Initialization functions
 from model.user import studylog, gradelog, User, initUsers
 from model.section import Section, initSections
 from model.group import Group, initGroups
+# from model.channel import Channel, initChannels
 # from model.channel import Channel, initChannels
 from model.post import Post, initPosts
 from model.nestPost import NestPost, initNestPosts
@@ -52,7 +52,8 @@ from model.deck import Deck, initDecks
 from model.studylog import initStudyLog
 from model.gradelog import initGradeLog
 from model.profile import Profile, initProfiles
-from model.chatlog import ChatLog, initChatLogs
+from model.leaderboard import LeaderboardEntry, initLeaderboard
+
 
 # server only Views
 
@@ -61,7 +62,7 @@ app.register_blueprint(messages_api)
 app.register_blueprint(user_api)
 app.register_blueprint(pfp_api) 
 app.register_blueprint(post_api)
-app.register_blueprint(channel_api)
+app.register_blueprint(channel_api) 
 app.register_blueprint(group_api)
 app.register_blueprint(section_api)
 app.register_blueprint(nestPost_api)
@@ -74,6 +75,10 @@ app.register_blueprint(studylog_api)
 app.register_blueprint(gradelog_api)
 app.register_blueprint(profile_api)
 app.register_blueprint(tips_api)
+if 'leaderboard_api' not in app.blueprints:
+    app.register_blueprint(leaderboard_api)
+
+
 
 
 # Tell Flask-Login the view function name of your login route
@@ -249,11 +254,11 @@ def generate_data():
     initUsers()
     initSections()
     initGroups()
-    initChannels()
+    # initChannels()
     initPosts()
     initFlashcards()
-    initDecks()
-    initChatlog()
+    initLeaderboard()
+
 
 
 def backup_database(db_uri, backup_uri):
@@ -313,8 +318,11 @@ def restore_data_command():
 app.cli.add_command(custom_cli)
 
 
+
+# AI Homework Help Endpoint
 genai.configure(api_key="AIzaSyAdopg5pOVdNN8eveu5ZQ4O4u4IZuK9NaY")
 model = genai.GenerativeModel('gemini-pro')
+
 
 @app.route('/api/ai/help', methods=['POST'])
 def ai_homework_help():
@@ -372,5 +380,5 @@ if __name__ == "__main__":
         initStudyLog()
         initGradeLog()
         initProfiles()
-        initChatlog()
+        initLeaderboard()
     app.run(debug=True, host="0.0.0.0", port="8887")
