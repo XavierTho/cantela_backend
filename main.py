@@ -15,6 +15,8 @@ import shutil
 from flask_cors import CORS  # Import CORS
 from flask import Blueprint, jsonify
 from api.flashcard_import import flashcard_import_api
+from model.channel import Channel
+
 
 # import "objects" from "this" project
 from __init__ import app, db, login_manager  # Key Flask objects 
@@ -247,7 +249,7 @@ def generate_data():
     # initChannels()
     initPosts()
     initFlashcards()
-    initChatLogs()
+    initChatlog()
 
 def backup_database(db_uri, backup_uri):
     if backup_uri:
@@ -364,5 +366,5 @@ if __name__ == "__main__":
         initStudyLog()
         initGradeLog()
         initProfiles()
-        initChatLogs()
+        initChatlog()
     app.run(debug=True, host="0.0.0.0", port="8887")
