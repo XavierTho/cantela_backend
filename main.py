@@ -17,6 +17,7 @@ from flask_cors import CORS  # Import CORS
 from flask import Blueprint, jsonify
 from api.flashcard_import import flashcard_import_api
 from model.channel import Channel
+from api.deck import deck_api
 
 
 # import "objects" from "this" project
@@ -54,6 +55,7 @@ from model.gradelog import initGradeLog
 from model.profiles import Profile, initProfiles
 from model.chatlog import ChatLog, initChatLogs
 from model.gradelog import GradeLog
+from model.deck import Deck, initDecks
 
 # server only Views
 
@@ -75,6 +77,7 @@ app.register_blueprint(studylog_api)
 app.register_blueprint(gradelog_api)
 app.register_blueprint(profile_api)
 app.register_blueprint(tips_api)
+app.register_blueprint(deck_api)
 
 
 # Tell Flask-Login the view function name of your login route
@@ -443,4 +446,5 @@ if __name__ == "__main__":
         initGradeLog()
         initProfiles()
         initChatLogs()
+        initDecks()
     app.run(debug=True, host="0.0.0.0", port="8887")
