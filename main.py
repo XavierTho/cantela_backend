@@ -50,7 +50,8 @@ from model.flashcard import Flashcard, initFlashcards
 from model.studylog import initStudyLog
 from model.gradelog import initGradeLog
 from model.profile import Profile, initProfiles
-from model.chatlog import Chatlog, initChatlog
+from model.chatlog import Chatlog, initChatLogs
+from model.gradelog import GradeLog
 
 # server only Views
 
@@ -265,6 +266,7 @@ def extract_data():
     with app.app_context():
         data['users'] = [user.read() for user in User.query.all()]
         data['sections'] = [section.read() for section in Section.query.all()]
+        data['gradelog'] = [gradelog.read() for gradelog in GradeLog.query.all()]
         data['groups'] = [group.read() for group in Group.query.all()]
         data['channels'] = [channel.read() for channel in Channel.query.all()]
         data['posts'] = [post.read() for post in Post.query.all()]
@@ -369,5 +371,5 @@ if __name__ == "__main__":
         initStudyLog()
         initGradeLog()
         initProfiles()
-        # initChatlog()
+        initChatLogs()
     app.run(debug=True, host="0.0.0.0", port="8887")
