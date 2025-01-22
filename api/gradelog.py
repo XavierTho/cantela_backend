@@ -60,14 +60,20 @@ class GradelogAPI:
         @token_required()
         def delete(self):
             """Delete a grade log."""
-            data = request.get_json()
-            if not data or 'id' not in data:
-                return {"message": "Grade Log ID is required"}, 400
-            grade_log = GradeLog.query.get(data['id'])
+            grade_log_id = request.args.get('id')
+            if not grade_log_id or not grade_log_id.isdigit():
+                return {"message": "A valid Grade Log ID is required"}, 400
+
+            grade_log = GradeLog.query.get(int(grade_log_id))
             if not grade_log or grade_log.user_id != g.current_user.id:
                 return {"message": "Grade Log not found or unauthorized"}, 404
-            grade_log.delete()
-            return {"message": "Grade Log deleted successfully"}, 200
+
+            try:
+                grade_log.delete()
+                return {"message": "Grade Log deleted successfully"}, 200
+            except Exception as e:
+                return {"message": f"An error occurred: {str(e)}"}, 500
+
 
 # Register the resource
 api.add_resource(GradelogAPI._CRUD, '/gradelog')
