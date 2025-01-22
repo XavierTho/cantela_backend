@@ -66,7 +66,6 @@ app.register_blueprint(user_api)
 app.register_blueprint(pfp_api) 
 app.register_blueprint(post_api)
 app.register_blueprint(channel_api)
-app.register_blueprint(channel_api)
 app.register_blueprint(group_api)
 app.register_blueprint(section_api)
 app.register_blueprint(nestPost_api)
@@ -79,6 +78,8 @@ app.register_blueprint(gradelog_api)
 app.register_blueprint(profile_api)
 app.register_blueprint(tips_api)
 app.register_blueprint(deck_api)
+
+print(f"SECRET_KEY: {app.config['SECRET_KEY']}")
 
 
 # Tell Flask-Login the view function name of your login route
@@ -227,7 +228,6 @@ def generate_data():
     initGroups()
     # initChannels()
     initPosts()
-    initFlashcards()
     initDecks()
     initChatLogs()
     initProfiles()
@@ -411,11 +411,17 @@ def remove_duplicates():
 
 
 if __name__ == "__main__":
-    with app.app_context():
-        initFlashcards()
-        initStudyLog()
-        initGradeLog()
-        initProfiles()
-        initChatLogs()
-        initDecks()
+    if not app.debug or os.environ.get("WERKZEUG_RUN_MAIN") == "true":
+        with app.app_context():
+            db.create_all()  # Ensure tables are created before initialization
+            if not User.query.first():  # Initialize only if no users exist
+                initUsers()
+            if not Flashcard.query.first():  # Initialize flashcards only if none exist
+                initFlashcards()
+            if not GradeLog.query.first():  # Initialize grade logs only if none exist
+                initGradeLog()
+            if not Profile.query.first():  # Initialize profiles only if none exist
+                initProfiles()
+            if not Deck.query.first():  # Initialize decks only if none exist
+                initDecks()
     app.run(debug=True, host="0.0.0.0", port="8887")
