@@ -50,7 +50,7 @@ from model.post import Post, initPosts
 from model.nestPost import NestPost, initNestPosts
 from model.vote import Vote, initVotes
 from model.flashcard import Flashcard, initFlashcards
-from model.studylog import initStudyLog
+from model.studylog import StudyLog, initStudyLog
 from model.gradelog import initGradeLog
 from model.profiles import Profile, initProfiles
 from model.chatlog import ChatLog, initChatLogs
@@ -79,7 +79,6 @@ app.register_blueprint(profile_api)
 app.register_blueprint(tips_api)
 app.register_blueprint(deck_api)
 
-print(f"SECRET_KEY: {app.config['SECRET_KEY']}")
 
 
 # Tell Flask-Login the view function name of your login route
@@ -120,8 +119,8 @@ def login():
 
 @app.route('/logout')
 def logout():
-    # Your existing logout logic here
-    pass
+    logout_user()
+    return redirect(url_for('login'))
 
 # Routes for grade logger
 @app.route('/api/grade-tracker/log', methods=['POST'])
@@ -231,6 +230,7 @@ def generate_data():
     initDecks()
     initChatLogs()
     initProfiles()
+    initStudyLog()
 
 
 def backup_database(db_uri, backup_uri):
@@ -251,6 +251,8 @@ def extract_data():
         data['groups'] = [group.read() for group in Group.query.all()]
 #        data['channels'] = [channel.read() for channel in Channel.query.all()]
         data['posts'] = [post.read() for post in Post.query.all()]
+        data['studylogs'] = [log.read() for log in StudyLog.query.all()]
+
     return data
 
 def save_data_to_json(data, directory='backup'):
@@ -263,7 +265,7 @@ def save_data_to_json(data, directory='backup'):
 
 def load_data_from_json(directory='backup'):
     data = {}
-    for table in ['users', 'sections', 'groups', 'channels', 'posts']:
+    for table in ['users', 'sections', 'groups', 'posts', 'studylogs']:
         with open(os.path.join(directory, f'{table}.json'), 'r') as f:
             data[table] = json.load(f)
     return data
@@ -275,6 +277,8 @@ def restore_data(data):
         _ = Group.restore(data['groups'], users)
  #       _ = Channel.restore(data['channels'])
         _ = Post.restore(data['posts'])
+        _ = StudyLog.restore(data['studylogs'])
+
     print("Data restored to the new database.")
 
 @custom_cli.command('backup_data')
