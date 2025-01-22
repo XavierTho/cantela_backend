@@ -312,7 +312,7 @@ def ai_homework_help():
             f"Here is your prompt: {question}"
         )
         
-        new_msg = ChatLog(prompt=question, response=response.text)
+        new_msg = ChatLog(question=question, response=response.text)
         new_msg.create()
         return jsonify({"response": response.text}), 200
     except Exception as e:
