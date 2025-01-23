@@ -40,7 +40,7 @@ from api.tips import tips_api
 from model.user import studylog, gradelog, User, initUsers
 from model.section import Section, initSections
 from model.group import Group, initGroups
-# from model.channel import Channel, initChannels
+from model.channel import Channel, initChannels
 from model.post import Post, initPosts
 from model.nestPost import NestPost, initNestPosts
 from model.vote import Vote, initVotes
@@ -289,7 +289,6 @@ def restore_data(data):
         _ = Section.restore(data['sections'])
         _ = Group.restore(data['groups'], users)
         _ = Channel.restore(data['channels'])
-        _ = Post.restore(data['posts'])
     print("Data restored to the new database.")
 
 @custom_cli.command('backup_data')
@@ -367,5 +366,5 @@ if __name__ == "__main__":
         initStudyLog()
         initGradeLog()
         initProfiles()
-        initChatlog()
+        # initChatlog()
     app.run(debug=True, host="0.0.0.0", port="8887")
