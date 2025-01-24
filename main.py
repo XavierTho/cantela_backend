@@ -323,15 +323,7 @@ def ai_homework_help():
     
 
 
-def remove_duplicates():
-    with app.app_context():
-        seen_names = set()
-        for profile in Profile.query.all():
-            if profile.name in seen_names:
-                db.session.delete(profile)
-            else:
-                seen_names.add(profile.name)
-        db.session.commit()
+
 
 
 if __name__ == "__main__":
