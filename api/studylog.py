@@ -11,9 +11,9 @@ studylog_api = Blueprint('studylog_api', __name__, url_prefix='/api')
 
 api = Api(studylog_api)
 
-
 class StudyLogAPI:
     class CRUD(Resource):
+        @token_required()
         def get(self):
             all_studylogs = StudyLog.query.all()
             studylogs = []
@@ -22,6 +22,8 @@ class StudyLogAPI:
                 studylogs.append(log.read())
 
             return jsonify(studylogs)
+
+        @token_required()
         def post(self):
             try:
                 data = request.get_json()
@@ -67,5 +69,61 @@ class StudyLogAPI:
             except Exception as e:
                 return {'message': f"An error occurred: {str(e)}"}, 500
 
+        @token_required()
+        def put(self):
+            try:
+                data = request.get_json()
+                if not data:
+                    return {'message': 'No input data provided'}, 400
+
+                studylog_id = data.get('id')
+                studylog = StudyLog.query.get(studylog_id)
+                if not studylog:
+                    return {'message': 'StudyLog not found'}, 404
+
+                studylog.user_id = data.get('user_id', studylog.user_id)
+                studylog.subject = data.get('subject', studylog.subject)
+                studylog.hours_studied = data.get('hours_studied', studylog.hours_studied)
+                studylog.notes = data.get('notes', studylog.notes)
+                db.session.commit()
+
+                return jsonify(studylog.read())
             
+            except Exception as e:
+                return {'message': f"An error occurred: {str(e)}"}, 500
+
+        @token_required()
+        def delete(self):
+            try:
+                data = request.get_json()
+                if not data:
+                    return {'message': 'No input data provided'}, 400
+
+                studylog_id = data.get('id')
+                studylog = StudyLog.query.get(studylog_id)
+                if not studylog:
+                    return {'message': 'StudyLog not found'}, 404
+
+                db.session.delete(studylog)
+                db.session.commit()
+
+                return {'message': 'StudyLog deleted successfully'}, 200
+            
+            except Exception as e:
+                return {'message': f"An error occurred: {str(e)}"}, 500
+
+        @staticmethod
+        def restore(data):
+            for log_data in data:
+                _ = log_data.pop('id', None)  # Remove 'id' from log_data
+            user_id = log_data.get("user_id", None)
+            subject = log_data.get("subject", None)
+            studylog = StudyLog.query.filter_by(user_id=user_id, subject=subject).first()
+            if studylog:
+                studylog.update(log_data)
+            else:
+                studylog = StudyLog(**log_data)
+                studylog.create()
+            db.session.commit()  # Commit after each entry
+
     api.add_resource(CRUD, '/studylognew')
