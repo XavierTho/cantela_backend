@@ -56,6 +56,8 @@ from model.profiles import Profile, initProfiles
 from model.chatlog import ChatLog, initChatLogs
 from model.gradelog import GradeLog
 from model.deck import Deck, initDecks
+from model.item import Item  # Assuming you have an Item model defined in the `model` folder
+
 
 
 # server only Views
@@ -323,15 +325,7 @@ def ai_homework_help():
     
 
 
-def remove_duplicates():
-    with app.app_context():
-        seen_names = set()
-        for profile in Profile.query.all():
-            if profile.name in seen_names:
-                db.session.delete(profile)
-            else:
-                seen_names.add(profile.name)
-        db.session.commit()
+
 
 
 if __name__ == "__main__":
