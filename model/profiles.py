@@ -76,6 +76,18 @@ class Profile(db.Model):
         db.session.delete(self)
         db.session.commit()
 
+    @staticmethod
+    def restore(data):
+        for profile_data in data:
+            _ = profile_data.pop('id', None)  # Remove 'id' to avoid conflicts
+            name = profile_data.get("name")
+            profile = Profile.query.filter_by(_name=name).first()
+            if profile:
+                profile.update(profile_data)
+            else:
+                profile = Profile(**profile_data)
+                profile.create()
+
 # Initialization function to add test data
 def initProfiles():
     with app.app_context():

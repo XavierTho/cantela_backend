@@ -252,6 +252,7 @@ def extract_data():
 #        data['channels'] = [channel.read() for channel in Channel.query.all()]
     #    data['posts'] = [post.read() for post in Post.query.all()]
         data['studylogs'] = [log.read() for log in StudyLog.query.all()]
+        data['profiles'] = [log.read() for log in Profile.query.all()]
 
     return data
 
@@ -265,7 +266,7 @@ def save_data_to_json(data, directory='backup'):
 
 def load_data_from_json(directory='backup'):
     data = {}
-    for table in ['users', 'sections', 'groups', 'studylogs']:
+    for table in ['users', 'sections', 'groups', 'studylogs', 'profiles']:
         with open(os.path.join(directory, f'{table}.json'), 'r') as f:
             data[table] = json.load(f)
     return data
@@ -278,6 +279,7 @@ def restore_data(data):
  #       _ = Channel.restore(data['channels'])
     #    _ = Post.restore(data['posts'])
         _ = StudyLog.restore(data['studylogs'])
+        _ = Profile.restore(data['profiles'])
 
     print("Data restored to the new database.")
 
@@ -320,88 +322,6 @@ def ai_homework_help():
         return jsonify({"error": str(e)}), 500
     
 
-# Add a GET route to retrieve all profiles
-@app.route('/profiles', methods=['GET'])
-def get_all_profiles():
-    """
-    Retrieve all profiles from the database.
-
-    Returns:
-        JSON response with a list of all profiles.
-    """
-    try:
-        # Query all profiles from the database
-        profiles = Profile.query.all()
-        # Convert profiles to a list of dictionaries
-        profiles_data = [profile.read() for profile in profiles]
-        return jsonify(profiles_data), 200  # Return the profiles as JSON
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-# Add a POST route for creating a new profile
-@app.route('/profiles', methods=['POST'])
-def create_profile():
-    """
-    Create a new profile using data from the request body.
-
-    Request Body:
-        {
-            "name": "Alice Johnson",
-            "classes": "Math, Science, History",
-            "favorite_class": "Science",
-            "grade": "A"
-        }
-
-    Returns:
-        JSON response with the created profile or an error message.
-    """
-    data = request.get_json()  # Get the JSON data from the request body
-
-    # Validate the required fields
-    if not all(key in data for key in ("name", "classes", "favorite_class", "grade")):
-        return jsonify({"error": "Missing one or more required fields"}), 400
-
-    # Create a new profile instance
-    profile = Profile(
-        name=data["name"],
-        classes=data["classes"],
-        favorite_class=data["favorite_class"],
-        grade=data["grade"]
-    )
-
-    # Save the profile to the database
-    try:
-        profile.create()
-        return jsonify(profile.read()), 201  # Return the created profile as JSON
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-
-# Add a DELETE route to delete a profile by ID
-@app.route('/profiles/<int:profile_id>', methods=['DELETE'])
-def delete_profile(profile_id):
-    """
-    Delete a profile from the database by its ID.
-
-    Args:
-        profile_id (int): The ID of the profile to delete.
-
-    Returns:
-        JSON response indicating success or failure.
-    """
-    try:
-        # Query the profile by ID
-        profile = Profile.query.get(profile_id)
-        
-        # Check if the profile exists
-        if not profile:
-            return jsonify({"error": "Profile not found"}), 404
-        
-        # Delete the profile
-        profile.delete()
-        return jsonify({"message": f"Profile with ID {profile_id} has been deleted"}), 200
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
 
 def remove_duplicates():
     with app.app_context():
