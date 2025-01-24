@@ -1,105 +1,108 @@
-from flask import Blueprint, jsonify, Flask
-from flask_restful import Api, Resource  # For building REST APIs
-from flask_cors import CORS  # Handles cross-origin requests
+from flask import Blueprint, request, jsonify
+from flask_restful import Api, Resource
+from sqlalchemy.exc import IntegrityError
+from __init__ import db
+from model.profiles import Profile
 
-# Set up the Flask app and API
-profile_api = Blueprint('profile_api', __name__, url_prefix='/api')  # Blueprint for modular API
-app = Flask(__name__)
-CORS(app, supports_credentials=True, origins='*')  # Allows frontend to talk to the backend without issues
+# Blueprint setup
+profile_api = Blueprint('profile_api', __name__, url_prefix='/api')
+api = Api(profile_api)
 
-api = Api(profile_api)  # Connect the API to the Blueprint
-
-# This is where we store all the student info for now (just static data)
+# ProfileAPI class to handle CRUD operations
 class ProfileAPI:
-    def get_student(name):
-        students = {
-            "Thomas Edison": {
-                "Classes": ["AP Physics", "AP Chemistry", "AP Statistics"],
-                "FavoriteClass": "AP Physics",
-                "FavoriteFlashcard": "Kinematics Equations",
-                "Grade": "A"
-            },
-            "Grace Hopper": {
-                "Classes": ["AP CSP", "AP Statistics", "AP US History"],
-                "FavoriteClass": "AP CSP",
-                "FavoriteFlashcard": "Binary Numbers",
-                "Grade": "A+"
-            },
-            "Nicholas Tesla": {
-                "Classes": ["AP Physics", "AP Chemistry", "AP Statistics"],
-                "FavoriteClass": "AP Physics",
-                "FavoriteFlashcard": "Electromagnetic Theory",
-                "Grade": "A"
-            },
-            "Xavier Thompson": {
-                "Classes": ["AP World History", "AP US History", "AP Statistics"],
-                "FavoriteClass": "AP World History",
-                "FavoriteFlashcard": "Industrial Revolution Key Terms",
-                "Grade": "B+"
-            },
-            "Armaghan Zarak": {
-                "Classes": ["AP US History", "AP World History", "AP CSP"],
-                "FavoriteClass": "AP US History",
-                "FavoriteFlashcard": "Constitutional Amendments",
-                "Grade": "A-"
-            },
-            "Arush Shah": {
-                "Classes": ["AP CSP", "AP Statistics", "AP Physics"],
-                "FavoriteClass": "AP CSP",
-                "FavoriteFlashcard": "Python Functions",
-                "Grade": "A+"
-            }
-        }
-        # Try to get the student data by name, or return None if not found
-        return students.get(name)
+    class CRUD(Resource):
+        def get(self):
+            try:
+                # Retrieve all profiles from the database
+                profiles = Profile.query.all()
+                return jsonify([profile.read() for profile in profiles])
+            except Exception as e:
+                return {'message': f"An error occurred: {str(e)}"}, 500
 
-# Each class below is basically an endpoint for one student's data
-class ThomasResource(Resource):
-    def get(self):
-        student = ProfileAPI.get_student("Thomas Edison")
-        if student:  # If we found the student, return their data
-            return jsonify(student)
-        return {"Data not found"}, 404  # If no data, send a 404 error
+        def post(self):
+            try:
+                data = request.get_json()
 
-class GraceResource(Resource):
-    def get(self):
-        student = ProfileAPI.get_student("Grace Hopper")
-        if student:
-            return jsonify(student)
-        return {"Data not found"}, 404
+                # Validate input data
+                if not data:
+                    return {'message': 'No input data provided'}, 400
 
-class NicholasResource(Resource):
-    def get(self):
-        student = ProfileAPI.get_student("Nicholas Tesla")
-        if student:
-            return jsonify(student)
-        return {"Data not found"}, 404
+                name = data.get('name')
+                classes = data.get('classes')
+                favorite_class = data.get('favorite_class')
+                grade = data.get('grade')
 
-class XavierResource(Resource):
-    def get(self):
-        student = ProfileAPI.get_student("Xavier Thompson")
-        if student:
-            return jsonify(student)
-        return {"Data not found"}, 404
+                if not name or not favorite_class or not grade:
+                    return {'message': 'Missing required fields'}, 400
 
-class ArmaghanResource(Resource):
-    def get(self):
-        student = ProfileAPI.get_student("Armaghan Zarak")
-        if student:
-            return jsonify(student)
-        return {"Data not found"}, 404
+                # Create and save the new profile
+                profile = Profile(name=name, classes=classes, favorite_class=favorite_class, grade=grade)
+                profile.create()
 
-class ArushResource(Resource):
-    def get(self):
-        student = ProfileAPI.get_student("Arush Shah")
-        if student:
-            return jsonify(student)
-        return {"Data not found"}, 404
+                return jsonify(profile.read()), 201
+            except IntegrityError:
+                db.session.rollback()
+                return {'message': 'Profile with the same name already exists'}, 400
+            except Exception as e:
+                db.session.rollback()
+                return {'message': f"An unexpected error occurred: {str(e)}"}, 500
 
-# Add routes for each student. The URL will map to the right resource.
-api.add_resource(ThomasResource, '/data/Thomas')  # /api/data/Thomas
-api.add_resource(GraceResource, '/data/Grace')    # /api/data/Grace
-api.add_resource(NicholasResource, '/data/Nicholas')  # /api/data/Nicholas
-api.add_resource(XavierResource, '/data/Xavier')  # /api/data/Xavier
-api.add_resource(ArmaghanResource, '/data/Armaghan')  # /api/data/Armaghan
-api.add_resource(ArushResource, '/data/Arush')    # /api/data/Arush
+        def put(self):
+            try:
+                data = request.get_json()
+
+                # Validate input data
+                if not data or 'id' not in data:
+                    return {'message': 'No input data provided or missing ID'}, 400
+
+                profile = Profile.query.get(data['id'])
+
+                if not profile:
+                    return {'message': 'Profile not found'}, 404
+
+                # Update the profile
+                profile.update(data)
+
+                return jsonify(profile.read())
+            except Exception as e:
+                return {'message': f"An error occurred: {str(e)}"}, 500
+
+        def delete(self):
+            try:
+                data = request.get_json()
+
+                # Validate input data
+                if not data or 'id' not in data:
+                    return {'message': 'No input data provided or missing ID'}, 400
+
+                profile = Profile.query.get(data['id'])
+
+                if not profile:
+                    return {'message': 'Profile not found'}, 404
+
+                # Delete the profile
+                profile.delete()
+
+                return {'message': 'Profile deleted successfully'}, 200
+            except Exception as e:
+                return {'message': f"An error occurred: {str(e)}"}, 500
+                
+    @staticmethod
+    def restore(data):
+        for profile_data in data:
+            _ = profile_data.pop('id', None)  # Remove 'id' to avoid conflicts
+            name = profile_data.get("name")
+            profile = Profile.query.filter_by(_name=name).first()
+            if profile:
+                profile.update(profile_data)
+            else:
+                profile = Profile(**profile_data)
+                profile.create()
+
+    api.add_resource(CRUD, '/profiles')
+
+# Example usage with Postman:
+# GET /api/profiles - Retrieve all profiles
+# POST /api/profiles - Add a new profile with JSON body
+# PUT /api/profiles - Update an existing profile with JSON body (must include 'id')
+# DELETE /api/profiles - Delete a profile with JSON body (must include 'id')
