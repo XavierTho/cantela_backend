@@ -116,13 +116,14 @@ class StudyLogAPI:
         def restore(data):
             for log_data in data:
                 _ = log_data.pop('id', None)  # Remove 'id' from log_data
-                user_id = log_data.get("user_id", None)
-                subject = log_data.get("subject", None)
-                studylog = StudyLog.query.filter_by(user_id=user_id, subject=subject).first()
-                if studylog:
-                    studylog.update(log_data)
-                else:
-                    studylog = StudyLog(**log_data)
-                    studylog.create()
+            user_id = log_data.get("user_id", None)
+            subject = log_data.get("subject", None)
+            studylog = StudyLog.query.filter_by(user_id=user_id, subject=subject).first()
+            if studylog:
+                studylog.update(log_data)
+            else:
+                studylog = StudyLog(**log_data)
+                studylog.create()
+            db.session.commit()  # Commit after each entry
 
     api.add_resource(CRUD, '/studylognew')
