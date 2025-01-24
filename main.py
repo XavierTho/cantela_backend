@@ -56,6 +56,8 @@ from model.profiles import Profile, initProfiles
 from model.chatlog import ChatLog, initChatLogs
 from model.gradelog import GradeLog
 from model.deck import Deck, initDecks
+from model.item import Item  # Assuming you have an Item model defined in the `model` folder
+
 
 
 # server only Views

@@ -1,6 +1,19 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 import random
+from __init__ import app, db
+from model.item import Item  # Assuming you have an Item model defined in the `model` folder
+from flask import Flask, render_template
+
+app = Flask(__name__)
+
+@app.route('/')
+def chat_tutor():
+    return render_template('chat_tutor.html')  # Render the chat_tutor.html template
+
+if __name__ == '__main__':
+    app.run(debug=True)
+
 
 # Initialize Flask application
 app = Flask(__name__)
@@ -257,3 +270,18 @@ if __name__ == '__main__':
 # ------------------------------
 # END OF FUTURE PLANS
 # ------------------------------
+
+
+# Route to delete an item
+@app.route('/delete-item/<int:item_id>', methods=['DELETE'])
+def delete_item(item_id):
+    item = Item.query.get(item_id)
+    if item:
+        db.session.delete(item)
+        db.session.commit()
+        return jsonify({'message': f'Item with ID {item_id} has been deleted.'}), 200
+    else:
+        return jsonify({'error': 'Item not found.'}), 404
+
+if __name__ == '__main__':
+    app.run(debug=True)
