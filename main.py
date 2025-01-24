@@ -281,6 +281,7 @@ def restore_data(data):
  #       _ = Channel.restore(data['channels'])
     #    _ = Post.restore(data['posts'])
         _ = StudyLog.restore(data['studylogs'])
+        _ = GradeLog.restore(data['gradelog'])
         _ = Profile.restore(data['profiles'])
 
     print("Data restored to the new database.")
