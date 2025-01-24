@@ -252,6 +252,7 @@ def extract_data():
 #        data['channels'] = [channel.read() for channel in Channel.query.all()]
     #    data['posts'] = [post.read() for post in Post.query.all()]
         data['studylogs'] = [log.read() for log in StudyLog.query.all()]
+        data['profiles'] = [log.read() for log in Profile.query.all()]
 
     return data
 
@@ -265,7 +266,7 @@ def save_data_to_json(data, directory='backup'):
 
 def load_data_from_json(directory='backup'):
     data = {}
-    for table in ['users', 'sections', 'groups', 'studylogs']:
+    for table in ['users', 'sections', 'groups', 'studylogs', 'profiles']:
         with open(os.path.join(directory, f'{table}.json'), 'r') as f:
             data[table] = json.load(f)
     return data
@@ -278,6 +279,7 @@ def restore_data(data):
  #       _ = Channel.restore(data['channels'])
     #    _ = Post.restore(data['posts'])
         _ = StudyLog.restore(data['studylogs'])
+        _ = Profile.restore(data['profiles'])
 
     print("Data restored to the new database.")
 
