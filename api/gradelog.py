@@ -1,6 +1,7 @@
-from flask import Blueprint, request, g
+from flask import Blueprint, request, jsonify, g
 from flask_restful import Api, Resource
 from api.jwt_authorize import token_required
+from __init__ import db
 from model.gradelog import GradeLog
 
 # Blueprint and API
@@ -35,15 +36,13 @@ class GradelogAPI:
         def get(self):
             """Get all grade entries for the current user."""
             current_user = g.current_user
-            grade_logs = GradeLog.query.filter_by(user_id=current_user.id).all()
-            logs = [{
-                'id': log.id,
-                'subject': log.subject,
-                'grade': log.grade,
-                'notes': log.notes,
-                'date': log.date.strftime('%Y-%m-%d')
-            } for log in grade_logs]
-            return logs, 200
+            all_gradelogs = GradeLog.query.all()
+            gradelog = []
+
+            for log in all_gradelogs:
+                gradelog.append(log.read())
+
+            return jsonify(gradelog)
 
         @token_required()
         def put(self):
@@ -73,6 +72,24 @@ class GradelogAPI:
                 return {"message": "Grade Log deleted successfully"}, 200
             except Exception as e:
                 return {"message": f"An error occurred: {str(e)}"}, 500
+            
+        @staticmethod
+        def restore(data):
+            for log_data in data:
+                _ = log_data.pop('id', None)
+            id = log_data.get("id", None)
+            user_id = log_data.get("user_id", None)
+            subject = log_data.get("subject", None)
+            grade = log_data.get("grade", None)
+            notes = log_data.get("notes", None)
+            date = log_data.get("date", None)
+            gradelog = GradeLog.query.filter_by(id=id, user_id=user_id, subject=subject, grade=grade, notes=notes, date=date ).first()
+            if gradelog:
+                gradelog.update(log_data)
+            else:
+                gradelog = GradeLog(**log_data)
+                gradelog.create()
+            db.session.commit() 
 
 
 # Register the resource

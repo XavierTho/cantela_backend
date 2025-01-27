@@ -1,6 +1,7 @@
 from sqlalchemy.exc import IntegrityError
 from __init__ import app, db
 from model.user import User
+from datetime import datetime
 
 class GradeLog(db.Model):
     """
@@ -63,6 +64,27 @@ class GradeLog(db.Model):
         db.session.delete(self)
         db.session.commit()
 
+    @staticmethod
+    def restore(data):
+        for log_data in data:
+            _ = log_data.pop('id', None)
+            id = log_data.get("id", None)
+            user_id = log_data.get("user_id", None)
+            subject = log_data.get("subject", None)
+            grade = log_data.get("grade", None)
+            notes = log_data.get("notes", None)
+            date_str = log_data.get("date", None)
+            date = datetime.strptime(date_str, '%Y-%m-%d %H:%M:%S') if date_str else None
+
+            gradelog = GradeLog.query.filter_by(id=id, user_id=user_id, subject=subject, grade=grade, notes=notes, date=date).first()
+            if gradelog:
+                gradelog.update(log_data)
+            else:
+                gradelog = GradeLog(user_id=user_id, subject=subject, grade=grade, notes=notes)
+                if date:
+                    gradelog.date = date
+                gradelog.create()
+
 def initGradeLog():
     with app.app_context():
         db.create_all()  # Create all tables
@@ -76,9 +98,6 @@ def initGradeLog():
 
         # Define test grade logs
         grade_logs = [
-            GradeLog(user_id=admin_user.id, subject='Math', grade=50, notes='Failed basic arithmetic'),
-            GradeLog(user_id=admin_user.id, subject='Science', grade=60, notes='Failed physics exam'),
-            GradeLog(user_id=admin_user.id, subject='History', grade=70, notes='Forgot details on American Civil War'),
             GradeLog(user_id=admin_user.id, subject='English', grade=80, notes='Analyzed Shakespeare'),
         ]
 
