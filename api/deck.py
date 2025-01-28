@@ -52,23 +52,17 @@ def get_all_decks():
     return jsonify([deck.read() for deck in decks]), 200  # Ensure `read()` includes `id`
 
 
-@deck_api.route('/deck/<int:deck_id>', methods=['DELETE'])
+@deck_api.route('/<int:deck_id>', methods=['DELETE'])
+@token_required()  # Ensure the user is authorized
 def delete_deck(deck_id):
     try:
-        # Fetch the deck by ID
+        # Find the deck by its ID
         deck = Deck.query.get(deck_id)
         if not deck:
-            return jsonify({"error": "Deck not found"}), 404
+            return jsonify({'error': f'Deck with ID {deck_id} not found'}), 404
 
-        # Delete associated flashcards
-        Flashcard.query.filter_by(_deck_id=deck_id).delete()
-
-        # Delete the deck itself
-        db.session.delete(deck)
-        db.session.commit()
-
-        return jsonify({"message": "Deck deleted successfully!"}), 200
+        # Delete the deck
+        deck.delete()
+        return jsonify({'message': f'Deck with ID {deck_id} deleted successfully'}), 200
     except Exception as e:
-        db.session.rollback()
-        print(f"Error while deleting deck: {e}")
-        return jsonify({"error": str(e)}), 500
+        return jsonify({'error': str(e)}), 500

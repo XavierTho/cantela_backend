@@ -13,14 +13,24 @@ class FlashcardAPI:
             """Create a new flashcard."""
             current_user = g.current_user
             data = request.get_json()
-            if not data or 'title' not in data or 'content' not in data:
-                return {'message': 'Title and content are required'}, 400
-            flashcard = Flashcard(data['title'], data['content'], current_user.id)
+
+            # Check for required fields
+            if not data or 'title' not in data or 'content' not in data or 'deck_id' not in data:
+                return {'message': 'Title, content, and deck_id are required'}, 400
+
+            # Validate deck_id
+            deck_id = data['deck_id']
+            if not deck_id:
+                return {'message': 'Invalid deck_id provided'}, 400
+
+            # Create the flashcard
+            flashcard = Flashcard(data['title'], data['content'], current_user.id, deck_id)
             flashcard = flashcard.create()
+
             if not flashcard:
                 return {'message': 'Failed to create flashcard'}, 400
+
             return jsonify(flashcard.read())
-        
 
         @token_required()
         def get(self):
