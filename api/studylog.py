@@ -122,11 +122,10 @@ class StudyLogAPI:
                 # Commit the changes to the database
                 db.session.commit()
 
-                # Return the updated study log as JSON
-                return jsonify(studylog.read())
-            
+                return {'message': 'StudyLog updated successfully'}, 200
+
             except Exception as e:
-                # If anything goes wrong, return an error message
+                db.session.rollback()
                 return {'message': f"An error occurred: {str(e)}"}, 500
 
         # DELETE: Remove an existing study log from the database
