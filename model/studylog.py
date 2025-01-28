@@ -5,19 +5,6 @@ from __init__ import app, db
 from model.user import User
 
 class StudyLog(db.Model):
-    """
-    StudyLog Model
-    
-    The StudyLog class represents an individual study log entry.
-    
-    Attributes:
-        id (db.Column): The primary key, an integer representing the unique identifier for the studylog.
-        user_id (db.Column): An integer representing the user who created the studylog.
-        subject (db.Column): A string representing the subject of the studylog.
-        hours_studied (db.Column): A float representing the hours studied.
-        notes (db.Column): A string representing the notes of the studylog.
-        date (db.Column): A datetime representing the date of the studylog.
-    """
     __tablename__ = 'studylog'
 
     id = db.Column(db.Integer, primary_key=True)
@@ -80,35 +67,38 @@ class StudyLog(db.Model):
     @staticmethod
     def restore(data):
         for log_data in data:
-            _ = log_data.pop('id', None)  # Remove 'id' from log_data
-            user_id = log_data.get("user_id", None)
-            subject = log_data.get("subject", None)
-            date_str = log_data.get("date", None)
+            if log_data.get('id') in [1, 2, 3]:
+                logging.info(f"Skipping log with id {log_data['id']}")
+                continue  # Skip entries with IDs 1, 2, and 3
+
+            log_data.pop('id', None)  # Remove 'id' to allow database to auto-generate it
+            date_str = log_data.get("date")
             if date_str:
                 try:
                     log_data["date"] = datetime.strptime(date_str, '%Y-%m-%d %H:%M:%S')
                 except ValueError:
-                    logging.warning(f"ValueError: Could not convert date string '{date_str}' to datetime format.")
-            studylog = StudyLog.query.filter_by(user_id=user_id, subject=subject).first()
-            if studylog:
-                studylog.update(log_data)
-            else:
-                studylog = StudyLog(**log_data)
-                studylog.create()
+                    logging.warning(f"Invalid date format for '{date_str}'. Skipping log.")
+                    continue  # Skip invalid entries
+
+            # Ensure required fields exist
+            required_fields = ["user_id", "subject", "hours_studied"]
+            if not all(field in log_data and log_data[field] for field in required_fields):
+                logging.warning(f"Missing required fields in log data: {log_data}. Skipping log.")
+                continue
+
+            # Create a new StudyLog entry
+            try:
+                new_studylog = StudyLog(**log_data)
+                db.session.add(new_studylog)
+                db.session.commit()
+            except IntegrityError as e:
+                db.session.rollback()
+                logging.warning(f"IntegrityError: Could not restore log due to {str(e)}.")
+            except Exception as e:
+                db.session.rollback()
+                logging.warning(f"Error restoring log: {str(e)}.")
 
 def initStudyLog():
-    """
-    The initStudyLog function creates the StudyLog table and adds tester data to the table.
-    
-    Uses:
-        The db ORM methods to create the table.
-    
-    Instantiates:
-        StudyLog objects with tester data.
-    
-    Raises:
-        IntegrityError: An error occurred when adding the tester data to the table.
-    """
     with app.app_context():
         db.create_all()
         studylogs = [
