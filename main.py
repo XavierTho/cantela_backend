@@ -516,7 +516,7 @@ def submit_quiz():
 def get_leaderboard():
     db_leaderboard = []
     for entry in LeaderboardEntry.query.all():
-        db_leaderboard.append({"name": entry.name, "score": entry.score})
+        db_leaderboard.append({"name": entry.name, "score": entry.score, "id": entry.id})
     sorted_leaderboard = sorted(  # Sort the leaderboard by score, highest first.
        db_leaderboard, key=lambda x: x['score'], reverse=True
     )

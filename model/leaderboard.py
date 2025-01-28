@@ -24,7 +24,8 @@ class LeaderboardEntry(db.Model):
     def read(self):
         return {"id": self.id, "name": self.name, "score": self.score}
 
-    def update(self):
+    def update(self, newScore):
+        self.score = newScore
         db.session.commit()
 
     def delete(self):

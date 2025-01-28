@@ -47,7 +47,6 @@ class LeaderboardAPI:
             except Exception as e:
                 return jsonify({'error': str(e)}), 500
 
-        @token_required()
         def delete(self):
             """
             Delete an existing leaderboard entry by ID.
@@ -55,14 +54,29 @@ class LeaderboardAPI:
             data = request.get_json()
             if "id" not in data:
                 return Response("{'message': 'Missing required field: id'}", 400)
-
             entry = LeaderboardEntry.query.get(data['id'])
             if not entry:
                 return jsonify({'message': 'Leaderboard entry not found'}), 404
 
             try:
                 entry.delete()  # Delete the entry from the database
-                return jsonify({"message": "Leaderboard entry deleted"}), 200
+                return jsonify({"message": "Leaderboard entry deleted"})
+            except Exception as e:
+                return jsonify({'error': str(e)}), 500
+        def put(self):
+            """
+            Update an existing leaderboard entry by ID.
+            """
+            data = request.get_json()
+            if "id" not in data:
+                return Response("{'message': 'Missing required field: id'}", 400)
+            entry = LeaderboardEntry.query.get(data['id'])
+            if not entry:
+                return jsonify({'message': 'Leaderboard entry not found'}), 404
+
+            try:
+                entry.update(data['score'])  # Update the entry in the database
+                return jsonify(entry.read())  # Return the updated entry's data
             except Exception as e:
                 return jsonify({'error': str(e)}), 500
 
