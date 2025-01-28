@@ -96,13 +96,13 @@ def initGradeLog():
             print("Admin user not found. Cannot initialize GradeLogs.")
             return
 
-        # Define test grade logs
-        grade_logs = [
-            GradeLog(user_id=admin_user.id, subject='English', grade=80, notes='Analyzed Shakespeare'),
-        ]
+        # # Define test grade logs
+        # grade_logs = [
+        #     GradeLog(user_id=admin_user.id, subject='English', grade=80, notes='Analyzed Shakespeare'),
+        # ]
 
-        # Add the test data to the database
-        for log in grade_logs:
-            db.session.add(log)
+        # # Add the test data to the database
+        # for log in grade_logs:
+        #     db.session.add(log)
         db.session.commit()
         print("Grade logs table initialized with test data.")
