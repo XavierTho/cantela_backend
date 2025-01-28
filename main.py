@@ -1,6 +1,7 @@
 # imports from flask
+import json
 from __init__ import app, db
-#import google.generativeai as genai
+import google.generativeai as genai
 from __init__ import app, db
 import requests
 import json
@@ -61,7 +62,6 @@ from model.gradelog import GradeLog
 from model.deck import Deck, initDecks
 from model.item import Item  # Assuming you have an Item model defined in the `model` folder
 from model.chatlog import Response  # Assuming you have a Response model defined in the `model` folder
-from model.chatlog import model 
 
 from model.leaderboard import LeaderboardEntry, initLeaderboard
 # server only Views
@@ -309,8 +309,8 @@ def restore_data_command():
 app.cli.add_command(custom_cli)
 
 
-#genai.configure(api_key="AIzaSyAdopg5pOVdNN8eveu5ZQ4O4u4IZuK9NaY")
-#model = genai.GenerativeModel('gemini-pro')
+genai.configure(api_key="AIzaSyAdopg5pOVdNN8eveu5ZQ4O4u4IZuK9NaY")
+model = genai.GenerativeModel('gemini-pro')
 
 @app.route('/api/ai/help', methods=['POST'])
 def ai_homework_help():
@@ -554,6 +554,8 @@ if __name__ == "__main__":
             if not Deck.query.first():  # Initialize decks only if none exist
                 initDecks()
             remove_duplicates()
+            if not Deck.query.first(): # Initialize chat logs only if none exist
+                initChatLogs
     app.run(debug=True, host="0.0.0.0", port="8887")
 
 
