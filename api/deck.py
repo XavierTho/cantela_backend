@@ -66,3 +66,20 @@ def delete_deck(deck_id):
         return jsonify({'message': f'Deck with ID {deck_id} deleted successfully'}), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+
+@deck_api.route('/deck/<int:deck_id>', methods=['PUT'])
+def update_deck(deck_id):
+    """Update the title of a specific deck."""
+    data = request.get_json()
+    if not data or 'title' not in data:
+        return jsonify({'error': 'Deck title is required'}), 400
+
+    deck = Deck.query.get(deck_id)
+    if not deck:
+        return jsonify({'error': 'Deck not found'}), 404
+
+    deck.title = data['title']  # Update the deck title
+    db.session.commit()  # Save changes to the database
+    return jsonify(deck.read()), 200
+
