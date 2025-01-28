@@ -548,6 +548,7 @@ if __name__ == "__main__":
                 initProfiles()
             if not Deck.query.first():  # Initialize decks only if none exist
                 initDecks()
+            remove_duplicates()
     app.run(debug=True, host="0.0.0.0", port="8887")
 
 
