@@ -1,6 +1,6 @@
 # imports from flask
 from __init__ import app, db
-import google.generativeai as genai
+#import google.generativeai as genai
 from __init__ import app, db
 import requests
 import json
@@ -15,9 +15,10 @@ from werkzeug.security import generate_password_hash
 import shutil
 from flask_cors import CORS  # Import CORS
 from flask import Blueprint, jsonify
-from api.flashcard_import import flashcard_import_api
+#from api.flashcard_import import flashcard_import_api
 from model.channel import Channel
 from api.deck import deck_api
+import random
 
 
 # import "objects" from "this" project
@@ -32,12 +33,14 @@ from api.group import group_api
 from api.section import section_api
 from api.nestPost import nestPost_api  # Custom format
 from api.messages_api import messages_api  # Messages
-from api.flashcard import flashcard_api
+#from api.flashcard import flashcard_api
 from api.vote import vote_api
 from api.studylog import studylog_api
 from api.gradelog import gradelog_api
 from api.profile import profile_api
 from api.tips import tips_api
+from api.leaderboard import leaderboard_api
+
 
 
 
@@ -58,8 +61,7 @@ from model.gradelog import GradeLog
 from model.deck import Deck, initDecks
 from model.item import Item  # Assuming you have an Item model defined in the `model` folder
 
-
-
+from model.leaderboard import LeaderboardEntry, initLeaderboard
 # server only Views
 
 # register URIs for API endpoints
@@ -73,13 +75,14 @@ app.register_blueprint(section_api)
 app.register_blueprint(nestPost_api)
 app.register_blueprint(nestImg_api)
 app.register_blueprint(vote_api)
-app.register_blueprint(flashcard_api)
-app.register_blueprint(flashcard_import_api)
+#app.register_blueprint(flashcard_api)
+#pp.register_blueprint(flashcard_import_api)
 app.register_blueprint(studylog_api)
 app.register_blueprint(gradelog_api)
 app.register_blueprint(profile_api)
 app.register_blueprint(tips_api)
 app.register_blueprint(deck_api)
+app.register_blueprint(leaderboard_api)
 
 
 
@@ -233,6 +236,7 @@ def generate_data():
     initChatLogs()
     initProfiles()
     initStudyLog()
+    initLeaderboard()
 
 
 def backup_database(db_uri, backup_uri):
@@ -300,8 +304,8 @@ def restore_data_command():
 app.cli.add_command(custom_cli)
 
 
-genai.configure(api_key="AIzaSyAdopg5pOVdNN8eveu5ZQ4O4u4IZuK9NaY")
-model = genai.GenerativeModel('gemini-pro')
+#genai.configure(api_key="AIzaSyAdopg5pOVdNN8eveu5ZQ4O4u4IZuK9NaY")
+#model = genai.GenerativeModel('gemini-pro')
 
 @app.route('/api/ai/help', methods=['POST'])
 def ai_homework_help():
@@ -325,8 +329,209 @@ def ai_homework_help():
         return jsonify({"error": str(e)}), 500
     
 
+# Add a GET route to retrieve all profiles
+@app.route('/profiles', methods=['GET'])
+def get_all_profiles():
+    """
+    Retrieve all profiles from the database.
+
+    Returns:
+        JSON response with a list of all profiles.
+    """
+    try:
+        # Query all profiles from the database
+        profiles = Profile.query.all()
+        # Convert profiles to a list of dictionaries
+        profiles_data = [profile.read() for profile in profiles]
+        return jsonify(profiles_data), 200  # Return the profiles as JSON
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+# Add a POST route for creating a new profile
+@app.route('/profiles', methods=['POST'])
+def create_profile():
+    """
+    Create a new profile using data from the request body.
+
+    Request Body:
+        {
+            "name": "Alice Johnson",
+            "classes": "Math, Science, History",
+            "favorite_class": "Science",
+            "grade": "A"
+        }
+
+    Returns:
+        JSON response with the created profile or an error message.
+    """
+    data = request.get_json()  # Get the JSON data from the request body
+
+    # Validate the required fields
+    if not all(key in data for key in ("name", "classes", "favorite_class", "grade")):
+        return jsonify({"error": "Missing one or more required fields"}), 400
+
+    # Create a new profile instance
+    profile = Profile(
+        name=data["name"],
+        classes=data["classes"],
+        favorite_class=data["favorite_class"],
+        grade=data["grade"]
+    )
+
+    # Save the profile to the database
+    try:
+        profile.create()
+        return jsonify(profile.read()), 201  # Return the created profile as JSON
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
+# Add a DELETE route to delete a profile by ID
+@app.route('/profiles/<int:profile_id>', methods=['DELETE'])
+def delete_profile(profile_id):
+    """
+    Delete a profile from the database by its ID.
+
+    Args:
+        profile_id (int): The ID of the profile to delete.
+
+    Returns:
+        JSON response indicating success or failure.
+    """
+    try:
+        # Query the profile by ID
+        profile = Profile.query.get(profile_id)
+        
+        # Check if the profile exists
+        if not profile:
+            return jsonify({"error": "Profile not found"}), 404
+        
+        # Delete the profile
+        profile.delete()
+        return jsonify({"message": f"Profile with ID {profile_id} has been deleted"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    
+@app.route('/api/data')
+def get_data():
+    InfoDb = [
+        {"FirstName": "Zafeer", "LastName": "Ahmed", "DOB": "January 11", "Residence": "San Diego", "Email": "zafeer10ahmed@gmail.com", "Owns_Cars": ["Tesla Model 3"]},
+        {"FirstName": "Arush", "LastName": "Shah", "DOB": "December 20", "Residence": "San Diego", "Email": "emailarushshah@gmail.com", "Owns_Cars": ["Tesla Model 3"]},
+        {"FirstName": "Nolan", "LastName": "Yu", "DOB": "October 7", "Residence": "San Diego", "Email": "nolanyu2@gmail.com", "Owns_Cars": ["Mazda"]},
+        {"FirstName": "Xavier", "LastName": "Thompson", "DOB": "January 23", "Residence": "San Diego", "Email": "xavierathompson@gmail.com", "Favorite_Foods": "Popcorn"},
+        {"FirstName": "Armaghan", "LastName": "Zarak", "DOB": "October 21", "Residence": "San Diego", "Email": "Armaghanz@icloud.com", "Owns_Vehicles": ["2015-scooter", "Half-a-bike", "2013-Honda-Pilot", "The-other-half-of-the-bike"]}
+    ]
+    return jsonify(InfoDb)
+
+question_pool = [
+    {"id": 1, "text": "Who was the first President of the United States?", "options": ["George Washington", "Thomas Jefferson", "John Adams", "James Madison"], "correctAnswer": "George Washington"},
+    {"id": 2, "text": "What year did the American Revolutionary War end?", "options": ["1776", "1781", "1783", "1791"], "correctAnswer": "1783"},
+    {"id": 3, "text": "What was the primary purpose of the Declaration of Independence?", "options": ["To declare war on Britain", "To establish a federal government", "To explain the reasons for American independence", "To create a constitution"], "correctAnswer": "To explain the reasons for American independence"},
+    {"id": 4, "text": "Which battle is considered the turning point of the American Civil War?", "options": ["Battle of Antietam", "Battle of Gettysburg", "Battle of Fort Sumter", "Battle of Vicksburg"], "correctAnswer": "Battle of Gettysburg"},
+    {"id": 5, "text": "Who wrote the 'Star-Spangled Banner' during the War of 1812?", "options": ["Francis Scott Key", "Thomas Paine", "Paul Revere", "John Quincy Adams"], "correctAnswer": "Francis Scott Key"},
+    {"id": 6, "text": "What was the main reason for the Louisiana Purchase?", "options": ["To expand westward", "To secure navigation rights on the Mississippi River", "To establish trade with Mexico", "To claim Alaska"], "correctAnswer": "To secure navigation rights on the Mississippi River"},
+    {"id": 7, "text": "Which event marked the start of the Great Depression?", "options": ["Stock Market Crash of 1929", "World War I", "Dust Bowl", "New Deal"], "correctAnswer": "Stock Market Crash of 1929"},
+    {"id": 8, "text": "What was the purpose of the Emancipation Proclamation?", "options": ["To free slaves in Confederate states", "To end the Civil War", "To grant voting rights to African Americans", "To create a constitutional amendment"], "correctAnswer": "To free slaves in Confederate states"},
+    {"id": 9, "text": "What was the significance of the Seneca Falls Convention of 1848?", "options": ["It launched the women's suffrage movement", "It ended slavery in the United States", "It marked the beginning of the abolitionist movement", "It established labor unions"], "correctAnswer": "It launched the women's suffrage movement"},
+    {"id": 10, "text": "What was the main goal of the Marshall Plan?", "options": ["To rebuild European economies after World War II", "To contain communism in Asia", "To establish NATO", "To rebuild Japan's military"], "correctAnswer": "To rebuild European economies after World War II"},
+    {"id": 11, "text": "Which Supreme Court case established judicial review?", "options": ["Marbury v. Madison", "McCulloch v. Maryland", "Dred Scott v. Sandford", "Brown v. Board of Education"], "correctAnswer": "Marbury v. Madison"},
+    {"id": 12, "text": "What was the main cause of the Mexican-American War?", "options": ["Border disputes over Texas", "Annexation of California", "Desire to acquire New Mexico", "Clash over Oregon territory"], "correctAnswer": "Border disputes over Texas"},
+    {"id": 13, "text": "Which amendment abolished slavery in the United States?", "options": ["13th Amendment", "14th Amendment", "15th Amendment", "19th Amendment"], "correctAnswer": "13th Amendment"},
+    {"id": 14, "text": "What was the primary purpose of the Monroe Doctrine?", "options": ["To prevent European colonization in the Americas", "To establish trade agreements with Europe", "To create alliances in Asia", "To defend against Native American attacks"], "correctAnswer": "To prevent European colonization in the Americas"},
+    {"id": 15, "text": "Which territory was acquired as a result of the Spanish-American War?", "options": ["Puerto Rico", "Hawaii", "Alaska", "Texas"], "correctAnswer": "Puerto Rico"},
+    {"id": 16, "text": "Who was the President during the Louisiana Purchase?", "options": ["Thomas Jefferson", "James Madison", "John Adams", "George Washington"], "correctAnswer": "Thomas Jefferson"},
+    {"id": 17, "text": "What was the primary goal of the Freedmen's Bureau?", "options": ["To help former slaves and poor whites", "To establish segregation laws", "To create northern industries", "To rebuild the southern economy"], "correctAnswer": "To help former slaves and poor whites"},
+    {"id": 18, "text": "Which event led directly to the start of the American Revolution?", "options": ["Boston Tea Party", "Stamp Act", "Boston Massacre", "Intolerable Acts"], "correctAnswer": "Intolerable Acts"},
+    {"id": 19, "text": "What was the significance of the Battle of Yorktown?", "options": ["It ended the Revolutionary War", "It began the Civil War", "It was a turning point in World War I", "It marked the end of the French and Indian War"], "correctAnswer": "It ended the Revolutionary War"},
+    {"id": 20, "text": "Which President issued the New Deal during the Great Depression?", "options": ["Franklin D. Roosevelt", "Herbert Hoover", "Harry S. Truman", "Woodrow Wilson"], "correctAnswer": "Franklin D. Roosevelt"},
+    {"id": 21, "text": "What was the goal of the Sherman Antitrust Act?", "options": ["To prevent monopolies and promote competition", "To establish labor unions", "To regulate stock markets", "To create income taxes"], "correctAnswer": "To prevent monopolies and promote competition"},
+    {"id": 22, "text": "Who was the author of 'Common Sense'?", "options": ["Thomas Paine", "Benjamin Franklin", "John Locke", "Alexander Hamilton"], "correctAnswer": "Thomas Paine"},
+    {"id": 23, "text": "Which treaty ended the Mexican-American War?", "options": ["Treaty of Guadalupe Hidalgo", "Treaty of Paris", "Adams-Onís Treaty", "Jay Treaty"], "correctAnswer": "Treaty of Guadalupe Hidalgo"},
+    {"id": 24, "text": "Which President is associated with the Trail of Tears?", "options": ["Andrew Jackson", "Martin Van Buren", "James Monroe", "Zachary Taylor"], "correctAnswer": "Andrew Jackson"},
+    {"id": 25, "text": "Which war was fought between the U.S. and Britain in the early 19th century?", "options": ["War of 1812", "Mexican-American War", "Spanish-American War", "World War I"], "correctAnswer": "War of 1812"},
+
+    {"id": 26, "text": "Which treaty ended the Revolutionary War?", "options": ["Treaty of Paris", "Treaty of Versailles", "Jay's Treaty", "Treaty of Ghent"], "correctAnswer": "Treaty of Paris"},
+    {"id": 27, "text": "Who was the leader of the Confederate Army during the Civil War?", "options": ["Robert E. Lee", "Ulysses S. Grant", "Stonewall Jackson", "Jefferson Davis"], "correctAnswer": "Robert E. Lee"},
+    {"id": 28, "text": "What was the primary goal of the abolitionist movement?", "options": ["To end slavery", "To expand suffrage", "To promote industrialization", "To defend states' rights"], "correctAnswer": "To end slavery"},
+    {"id": 29, "text": "What was the significance of the Homestead Act of 1862?", "options": ["It provided free land to settlers in the West", "It ended Reconstruction", "It promoted the growth of railroads", "It abolished slavery"], "correctAnswer": "It provided free land to settlers in the West"},
+    {"id": 30, "text": "Which economic policy was promoted by Alexander Hamilton?", "options": ["A strong central bank", "Laissez-faire capitalism", "Agrarian-based economy", "Free trade with Britain"], "correctAnswer": "A strong central bank"},
+    {"id": 31, "text": "What was the primary purpose of the Gadsden Purchase?", "options": ["To build a southern transcontinental railroad", "To annex California", "To establish Texas' borders", "To acquire Oregon"], "correctAnswer": "To build a southern transcontinental railroad"},
+    {"id": 32, "text": "What was the main effect of the Compromise of 1850?", "options": ["It allowed California to enter as a free state", "It started the Civil War", "It ended Reconstruction", "It established popular sovereignty in the North"], "correctAnswer": "It allowed California to enter as a free state"},
+    {"id": 33, "text": "Who was the main author of the U.S. Constitution?", "options": ["James Madison", "Alexander Hamilton", "Thomas Jefferson", "George Washington"], "correctAnswer": "James Madison"},
+    {"id": 34, "text": "What was the significance of the Dred Scott v. Sandford case?", "options": ["It ruled that African Americans could not be U.S. citizens", "It ended segregation", "It granted voting rights to women", "It established judicial review"], "correctAnswer": "It ruled that African Americans could not be U.S. citizens"},
+    {"id": 35, "text": "What was the main purpose of the Federalist Papers?", "options": ["To promote the ratification of the Constitution", "To establish the Bill of Rights", "To outline states' rights", "To end the Revolutionary War"], "correctAnswer": "To promote the ratification of the Constitution"},
+    {"id": 36, "text": "What did the Kansas-Nebraska Act of 1854 do?", "options": ["Allowed popular sovereignty to decide slavery", "Ended slavery in the U.S.", "Granted voting rights to women", "Created new railroads"], "correctAnswer": "Allowed popular sovereignty to decide slavery"},
+    {"id": 37, "text": "What was the primary reason for the War of 1812?", "options": ["British impressment of American sailors", "U.S. expansion into Mexico", "Conflict over the Louisiana Purchase", "Spanish interference in trade"], "correctAnswer": "British impressment of American sailors"},
+    {"id": 38, "text": "Who were the main laborers on the Transcontinental Railroad?", "options": ["Chinese and Irish immigrants", "Slaves and Native Americans", "Freedmen and women", "Mexicans and Canadians"], "correctAnswer": "Chinese and Irish immigrants"},
+    {"id": 39, "text": "Which event is associated with the start of the women's suffrage movement?", "options": ["Seneca Falls Convention", "Montgomery Bus Boycott", "The New Deal", "The Great Migration"], "correctAnswer": "Seneca Falls Convention"},
+    {"id": 40, "text": "What was the purpose of the Proclamation of 1763?", "options": ["To limit colonial expansion west of the Appalachians", "To establish new taxes on tea", "To create a trade alliance with Spain", "To declare war on France"], "correctAnswer": "To limit colonial expansion west of the Appalachians"},
+    {"id": 41, "text": "What did the 19th Amendment achieve?", "options": ["Granted women the right to vote", "Abolished slavery", "Limited presidential terms", "Guaranteed freedom of speech"], "correctAnswer": "Granted women the right to vote"},
+    {"id": 42, "text": "Which President is known for the Square Deal?", "options": ["Theodore Roosevelt", "Franklin D. Roosevelt", "Woodrow Wilson", "William Taft"], "correctAnswer": "Theodore Roosevelt"},
+    {"id": 43, "text": "What was the goal of the Civilian Conservation Corps (CCC)?", "options": ["To create jobs during the Great Depression", "To end slavery", "To promote women's suffrage", "To build the Transcontinental Railroad"], "correctAnswer": "To create jobs during the Great Depression"},
+    {"id": 44, "text": "Which treaty ended World War I?", "options": ["Treaty of Versailles", "Treaty of Paris", "Treaty of Ghent", "Treaty of Guadalupe Hidalgo"], "correctAnswer": "Treaty of Versailles"},
+    {"id": 45, "text": "What was the purpose of the Fugitive Slave Act?", "options": ["To require the return of escaped slaves to their owners", "To abolish slavery in the North", "To create abolitionist societies", "To protect freed slaves in the South"], "correctAnswer": "To require the return of escaped slaves to their owners"},
+    {"id": 46, "text": "What was the primary goal of the Lewis and Clark Expedition?", "options": ["To explore the Louisiana Territory", "To establish settlements in Oregon", "To expand the railroad system", "To negotiate with Native American tribes"], "correctAnswer": "To explore the Louisiana Territory"},
+    {"id": 47, "text": "Who was the President during the Cuban Missile Crisis?", "options": ["John F. Kennedy", "Dwight D. Eisenhower", "Lyndon B. Johnson", "Richard Nixon"], "correctAnswer": "John F. Kennedy"},
+    {"id": 48, "text": "What was the main reason for the Salem Witch Trials?", "options": ["Religious hysteria and social tensions", "A Native American uprising", "Political corruption", "A lack of education"], "correctAnswer": "Religious hysteria and social tensions"},
+    {"id": 49, "text": "What was the purpose of the Social Security Act of 1935?", "options": ["To provide financial assistance to the elderly and unemployed", "To regulate labor unions", "To fund public education", "To establish a minimum wage"], "correctAnswer": "To provide financial assistance to the elderly and unemployed"},
+    {"id": 50, "text": "Which amendment gave African American men the right to vote?", "options": ["15th Amendment", "13th Amendment", "14th Amendment", "19th Amendment"], "correctAnswer": "15th Amendment"}
+]
+
+   
+# Leaderboard data stored in memory
+leaderboard = []  # A list to store user names and their scores.
+
+# Route to fetch 10 random questions from the question pool
+@app.route('/api/quiz/apush', methods=['GET'])  # Endpoint to get APUSH quiz questions.
+def get_questions():
+    selected_questions = random.sample(question_pool, 10)  # Pick 10 random questions from the pool.
+    sanitized_questions = [  # Remove the correctAnswer field so users can't see the answers.
+        {key: value for key, value in q.items() if key != "correctAnswer"} 
+        for q in selected_questions
+    ]
+    return jsonify(sanitized_questions), 200  # Send sanitized questions as JSON with HTTP 200 (success).
+
+# Route to handle quiz submissions
+@app.route('/api/quiz/apush/submit', methods=['POST'])  # Endpoint to submit quiz answers.
+def submit_quiz():
+    data = request.json  # Get JSON data from the request.
+    answers = data.get('answers', [])  # Get the user's answers or an empty list if none provided.
+    user_name = data.get('name', 'Anonymous')  # Get the user's name or default to "Anonymous".
+
+    score = 0  # Initialize the user's score to zero.
+    for answer in answers:  # Loop through each answer submitted by the user.
+        question = next(  # Find the matching question in the question pool.
+            (q for q in question_pool if q["id"] == answer["questionId"]), 
+            None
+        )
+        if question and question["correctAnswer"] == answer["answer"]:  # Check if the answer is correct.
+            score += 1  # Add 1 to the score for each correct answer.
+
+    leaderboard.append({"name": user_name, "score": score})  # Add the user's name and score to the leaderboard.
+    LeaderboardEntry(name=user_name, score=score).create()  # Save the user's score to the database.
+    return jsonify({"name": user_name, "score": score}), 200  # Send the user's score as JSON with HTTP 200.
+
+# Route to fetch the leaderboard, sorted by score in descending order
+@app.route('/api/leaderboard/apush', methods=['GET'])  # Endpoint to get the APUSH leaderboard.
+def get_leaderboard():
+    db_leaderboard = []
+    for entry in LeaderboardEntry.query.all():
+        db_leaderboard.append({"name": entry.name, "score": entry.score})
+    sorted_leaderboard = sorted(  # Sort the leaderboard by score, highest first.
+       db_leaderboard, key=lambda x: x['score'], reverse=True
+    )
+    return jsonify(sorted_leaderboard), 200  # Send the sorted leaderboard as JSON with HTTP 200.
+
+
+def remove_duplicates():
+    with app.app_context():
+        seen_names = set()
+        for profile in Profile.query.all():
+            if profile.name in seen_names:
+                db.session.delete(profile)
+            else:
+                seen_names.add(profile.name)
+        db.session.commit()
 
 
 if __name__ == "__main__":
@@ -335,12 +540,56 @@ if __name__ == "__main__":
             db.create_all()  # Ensure tables are created before initialization
             if not User.query.first():  # Initialize only if no users exist
                 initUsers()
-            if not Flashcard.query.first():  # Initialize flashcards only if none exist
-                initFlashcards()
+            #if not Flashcard.query.first():  # Initialize flashcards only if none exist
+                #initFlashcards()
             if not GradeLog.query.first():  # Initialize grade logs only if none exist
                 initGradeLog()
-            if not Profile.query.first():  # Initialize profiles only if none exist
+           # if not Profile.query.first():  # Initialize profiles only if none exist
                 initProfiles()
             if not Deck.query.first():  # Initialize decks only if none exist
                 initDecks()
     app.run(debug=True, host="0.0.0.0", port="8887")
+
+
+
+
+
+
+# Route to add a new leaderboard entry
+@app.route('/api/leaderboard/apush/add', methods=['POST'])
+def add_leaderboard_entry():
+    try:
+        data = request.get_json()
+        name = data.get('name')
+        score = data.get('score')
+
+        if not name or score is None:
+            return jsonify({'error': 'Name and score are required'}), 400
+
+        # Add the new entry to the database
+        new_entry = LeaderboardEntry(name=name, score=int(score))
+        new_entry.create()
+        return jsonify(new_entry.read()), 201  # Return the new entry
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+# Route to delete a leaderboard entry
+@app.route('/api/leaderboard/apush/delete', methods=['DELETE'])
+def delete_leaderboard_entry():
+    try:
+        data = request.get_json()
+        entry_id = data.get('id')
+
+        if not entry_id:
+            return jsonify({'error': 'ID is required'}), 400
+
+        # Find and delete the entry
+        entry = LeaderboardEntry.query.get(entry_id)
+        if not entry:
+            return jsonify({'error': 'Leaderboard entry not found'}), 404
+
+        entry.delete()
+        return jsonify({'message': f'Entry with ID {entry_id} has been deleted'}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500

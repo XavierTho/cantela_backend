@@ -11,31 +11,29 @@ leaderboard_api = Blueprint('leaderboard_api', __name__, url_prefix='/api')
 # Initialize the API object and attach it to the Blueprint
 api = Api(leaderboard_api)
 
+
 class LeaderboardAPI:
     """
     This class defines CRUD (Create, Read, Update, Delete) API endpoints for LeaderboardEntry.
     """
 
-    class _CRUD(Resource):
+    class CRUD(Resource):
         @token_required()  # Ensure the user is authorized
         def post(self):
             """
-            Create a new leaderboard entry.
+            Add a new leaderboard entry.
             """
-            current_user = g.current_user  # Get the current user from the token
-            data = request.get_json()  # Parse JSON data from the request
+            data = request.get_json()
             if "name" not in data or "score" not in data:
-                # Return a 400 error if required fields are missing
                 return Response("{'message': 'Missing required fields: name or score'}", 400)
 
-            # Create a new LeaderboardEntry object
             entry = LeaderboardEntry(name=data['name'], score=data['score'])
 
             try:
                 entry.create()  # Save the new entry to the database
-                return jsonify(entry.read()), 201  # Return the new entry's data with a 201 status
+                return jsonify(entry.read()), 201  # Return the created entry's data
             except Exception as e:
-                return jsonify({'error': str(e)}), 500  # Return a 500 error if something goes wrong
+                return jsonify({'error': str(e)}), 500
 
         def get(self):
             """
@@ -44,51 +42,23 @@ class LeaderboardAPI:
             try:
                 entries = LeaderboardEntry.query.order_by(LeaderboardEntry.score.desc()).all()
                 if not entries:
-                    return Response("{'message': 'No leaderboard entries found'}", 404)
-                # Return the list of all entries in JSON format
+                    return jsonify({'message': 'No leaderboard entries found'}), 404
                 return jsonify([entry.read() for entry in entries]), 200
-            except Exception as e:
-                return jsonify({'error': str(e)}), 500  # Handle and return any exceptions
-
-        @token_required()
-        def put(self):
-            """
-            Update an existing leaderboard entry.
-            """
-            current_user = g.current_user  # Get the current user
-            data = request.get_json()  # Parse JSON data from the request
-            if "id" not in data or "name" not in data or "score" not in data:
-                # Return a 400 error if required fields are missing
-                return Response("{'message': 'Missing required fields: id, name, or score'}", 400)
-
-            entry = LeaderboardEntry.query.get(data['id'])  # Find the entry by ID
-            if not entry:
-                return Response("{'message': 'Leaderboard entry not found'}", 404)
-
-            # Update the entry's fields
-            entry.name = data['name']
-            entry.score = data['score']
-
-            try:
-                entry.update()  # Save the updated entry to the database
-                return jsonify(entry.read()), 200  # Return the updated entry's data
             except Exception as e:
                 return jsonify({'error': str(e)}), 500
 
         @token_required()
         def delete(self):
             """
-            Delete a leaderboard entry.
+            Delete an existing leaderboard entry by ID.
             """
-            current_user = g.current_user  # Get the current user
-            data = request.get_json()  # Parse JSON data from the request
+            data = request.get_json()
             if "id" not in data:
-                # Return a 400 error if the ID field is missing
                 return Response("{'message': 'Missing required field: id'}", 400)
 
-            entry = LeaderboardEntry.query.get(data['id'])  # Find the entry by ID
+            entry = LeaderboardEntry.query.get(data['id'])
             if not entry:
-                return Response("{'message': 'Leaderboard entry not found'}", 404)
+                return jsonify({'message': 'Leaderboard entry not found'}), 404
 
             try:
                 entry.delete()  # Delete the entry from the database
@@ -96,9 +66,8 @@ class LeaderboardAPI:
             except Exception as e:
                 return jsonify({'error': str(e)}), 500
 
-    # Map the _CRUD class to the /leaderboard API endpoint
-    api.add_resource(_CRUD, '/leaderboard')
-
+    # Register CRUD endpoints with a unique name
+    api.add_resource(CRUD, '/leaderboard', endpoint='leaderboard_crud')
 
 
 def initLeaderboard():
