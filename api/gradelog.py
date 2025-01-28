@@ -36,7 +36,7 @@ class GradelogAPI:
         def get(self):
             """Get all grade entries for the current user."""
             current_user = g.current_user
-            all_gradelogs = GradeLog.query.all()
+            all_gradelogs = GradeLog.query.filter_by(user_id=current_user.id).all()
             gradelog = []
 
             for log in all_gradelogs:
@@ -72,25 +72,6 @@ class GradelogAPI:
                 return {"message": "Grade Log deleted successfully"}, 200
             except Exception as e:
                 return {"message": f"An error occurred: {str(e)}"}, 500
-            
-        @staticmethod
-        def restore(data):
-            for log_data in data:
-                _ = log_data.pop('id', None)
-            id = log_data.get("id", None)
-            user_id = log_data.get("user_id", None)
-            subject = log_data.get("subject", None)
-            grade = log_data.get("grade", None)
-            notes = log_data.get("notes", None)
-            date = log_data.get("date", None)
-            gradelog = GradeLog.query.filter_by(id=id, user_id=user_id, subject=subject, grade=grade, notes=notes, date=date ).first()
-            if gradelog:
-                gradelog.update(log_data)
-            else:
-                gradelog = GradeLog(**log_data)
-                gradelog.create()
-            db.session.commit() 
-
 
 # Register the resource
 api.add_resource(GradelogAPI._CRUD, '/gradelog')
