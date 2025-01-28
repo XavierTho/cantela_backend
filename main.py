@@ -255,6 +255,8 @@ def extract_data():
     #    data['posts'] = [post.read() for post in Post.query.all()]
         data['studylogs'] = [log.read() for log in StudyLog.query.all()]
         data['profiles'] = [log.read() for log in Profile.query.all()]
+        data['chatlog'] = [log.read() for log in ChatLog.query.all()]
+            
 
     return data
 
@@ -268,7 +270,7 @@ def save_data_to_json(data, directory='backup'):
 
 def load_data_from_json(directory='backup'):
     data = {}
-    for table in ['users', 'sections', 'groups', 'studylogs', 'profiles']:
+    for table in ['users', 'sections', 'groups', 'studylogs', 'profiles', 'chatlog']:
         with open(os.path.join(directory, f'{table}.json'), 'r') as f:
             data[table] = json.load(f)
     return data
@@ -282,6 +284,7 @@ def restore_data(data):
     #    _ = Post.restore(data['posts'])
         _ = StudyLog.restore(data['studylogs'])
         _ = Profile.restore(data['profiles'])
+        _ = ChatLog.restore(data['chatlog'])
 
     print("Data restored to the new database.")
 

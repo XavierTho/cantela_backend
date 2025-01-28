@@ -82,6 +82,20 @@ class ChatLog(db.Model):
                 log = ChatLog(**log_data)
                 log.create()
         return chat_logs
+@staticmethod
+def restore(chat_data):
+    for log_entry in chat_data:
+        _ = log_entry.pop('id', None)  # Remove 'id' to avoid conflicts
+        session_id = log_entry.get("session_id")
+        chatlog = ChatLog.query.filter_by(session_id=session_id).first()
+        if chatlog:
+            chatlog.update(log_entry)
+        else:
+            chatlog = ChatLog(**log_entry)
+            chatlog.create()
+
+    
+    
 def initChatLogs():
     """
     Initialize the database with example chat logs for testing.
