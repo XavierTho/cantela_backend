@@ -1,7 +1,7 @@
 from sqlalchemy.exc import IntegrityError
 from __init__ import app, db
-from model.deck import Deck
 from model.user import User
+from model.deck import Deck
 
 class Flashcard(db.Model):
     """
@@ -20,13 +20,14 @@ class Flashcard(db.Model):
     _title = db.Column(db.String(255), nullable=False)
     _content = db.Column(db.String(255), nullable=False)
     _user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    _deck_id = db.Column(db.Integer, db.ForeignKey('decks.id'), nullable=True)  
+    _deck_id = db.Column(db.Integer, db.ForeignKey('decks.id'), nullable=True)
 
     def __init__(self, title, content, user_id, deck_id=None):
         self._title = title
         self._content = content
         self._user_id = user_id
         self._deck_id = deck_id
+        
 
     def create(self):
         try:
@@ -42,10 +43,6 @@ class Flashcard(db.Model):
             db.session.rollback()
             print(f"Unexpected error while creating flashcard: {e}")
             return None
-
-
-
-
 
     def read(self):
         return {
@@ -69,22 +66,45 @@ class Flashcard(db.Model):
         db.session.delete(self)
         db.session.commit()
 
+    @staticmethod
+    def restore(data):
+        """
+        Restore flashcards from a list of data.
+
+        Args:
+            data (list): A list of dictionaries containing flashcard data.
+        """
+        for card_data in data:
+            card_data.pop('id', None)  # Ignore the ID field if present
+            user_id = card_data.get("user_id")
+            deck_id = card_data.get("deck_id")
+            title = card_data.get("title")
+
+            # Check if the flashcard already exists
+            flashcard = Flashcard.query.filter_by(_user_id=user_id, _deck_id=deck_id, _title=title).first()
+            if flashcard:
+                flashcard.update(card_data)
+            else:
+                flashcard = Flashcard(**card_data)
+                flashcard.create()
+
+
 def initFlashcards():
     with app.app_context():
         # Create tables if they don't exist
-        db.create_all()  # This will create all tables
+        db.create_all()
         print("Flashcards table initialized.")
 
-        # Add test data if the tables are empty
+        # Add test data if the table is empty
         if Flashcard.query.count() == 0:
-            user = User.query.first()  # Assuming at least one user exists
+            user = User.query.first()
             if not user:
-                user = User(username='testuser', password='password123')  # Create a test user if not exists
+                user = User(username='testuser', password='password123')
                 db.session.add(user)
                 db.session.commit()
 
             # Example: Create some decks
-            deck = Deck(title='Math Flashcards', user_id=user.id)  # Provide user_id here
+            deck = Deck(title='Math Flashcards', user_id=user.id)
             db.session.add(deck)
             db.session.commit()
 
