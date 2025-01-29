@@ -31,6 +31,12 @@ class GradeLog(db.Model):
         self.notes = notes
 
     def create(self):
+        """
+        Add the current GradeLog instance to the database.
+        
+        Returns:
+            self: The created GradeLog instance if successful, None otherwise.
+        """
         try:
             db.session.add(self)
             db.session.commit()
@@ -40,6 +46,12 @@ class GradeLog(db.Model):
             return None
 
     def read(self):
+        """
+        Convert the GradeLog instance to a dictionary.
+        
+        Returns:
+            dict: A dictionary representation of the GradeLog instance.
+        """
         return {
             "id": self.id,
             "user_id": self.user_id,
@@ -50,6 +62,15 @@ class GradeLog(db.Model):
         }
 
     def update(self, data):
+        """
+        Update the GradeLog instance with new data.
+        
+        Args:
+            data (dict): A dictionary containing the new data for the GradeLog instance.
+        
+        Returns:
+            self: The updated GradeLog instance.
+        """
         for key, value in data.items():
             if key == "subject":
                 self.subject = value
@@ -61,11 +82,20 @@ class GradeLog(db.Model):
         return self
 
     def delete(self):
+        """
+        Delete the current GradeLog instance from the database.
+        """
         db.session.delete(self)
         db.session.commit()
 
     @staticmethod
     def restore(data):
+        """
+        Restore GradeLog instances from a list of dictionaries.
+        
+        Args:
+            data (list): A list of dictionaries containing the data for GradeLog instances.
+        """
         for log_data in data:
             _ = log_data.pop('id', None)
             id = log_data.get("id", None)
@@ -96,13 +126,13 @@ def initGradeLog():
             print("Admin user not found. Cannot initialize GradeLogs.")
             return
 
-        # Define test grade logs
-        grade_logs = [
-            GradeLog(user_id=admin_user.id, subject='English', grade=80, notes='Analyzed Shakespeare'),
-        ]
+        # # Define test grade logs
+        # grade_logs = [
+        #     GradeLog(user_id=admin_user.id, subject='English', grade=80, notes='Analyzed Shakespeare'),
+        # ]
 
-        # Add the test data to the database
-        for log in grade_logs:
-            db.session.add(log)
+        # # Add the test data to the database
+        # for log in grade_logs:
+        #     db.session.add(log)
         db.session.commit()
         print("Grade logs table initialized with test data.")

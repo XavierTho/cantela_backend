@@ -1,4 +1,5 @@
 # imports from flask
+import json
 from __init__ import app, db
 import google.generativeai as genai
 from __init__ import app, db
@@ -15,7 +16,7 @@ from werkzeug.security import generate_password_hash
 import shutil
 from flask_cors import CORS  # Import CORS
 from flask import Blueprint, jsonify
-#from api.flashcard_import import flashcard_import_api
+from api.flashcard_import import flashcard_import_api
 from model.channel import Channel
 from api.deck import deck_api
 import random
@@ -23,6 +24,7 @@ import random
 
 # import "objects" from "this" project
 from __init__ import app, db, login_manager  # Key Flask objects 
+
 # API endpoints
 from api.user import user_api 
 from api.pfp import pfp_api
@@ -33,7 +35,7 @@ from api.group import group_api
 from api.section import section_api
 from api.nestPost import nestPost_api  # Custom format
 from api.messages_api import messages_api  # Messages
-#from api.flashcard import flashcard_api
+from api.flashcard import flashcard_api
 from api.vote import vote_api
 from api.studylog import studylog_api
 from api.gradelog import gradelog_api
@@ -48,8 +50,8 @@ from api.leaderboard import leaderboard_api
 from model.user import gradelog, User, initUsers
 from model.section import Section, initSections
 from model.group import Group, initGroups
-# from model.channel import Channel, initChannels
-# from model.post import Post, initPosts
+from model.channel import Channel, initChannels
+from model.post import Post, initPosts
 from model.nestPost import NestPost, initNestPosts
 from model.vote import Vote, initVotes
 from model.flashcard import Flashcard, initFlashcards
@@ -60,8 +62,8 @@ from model.chatlog import ChatLog, initChatLogs
 from model.gradelog import GradeLog
 from model.deck import Deck, initDecks
 from model.item import Item  # Assuming you have an Item model defined in the `model` folder
-# from model.chatlog import Response  # Assuming you have a Response model defined in the `model` folder
-# from model.chatlog import model 
+from model.chatlog import Response  # Assuming you have a Response model defined in the `model` folder
+from model.chatlog import model 
 
 from model.leaderboard import LeaderboardEntry, initLeaderboard
 # server only Views
@@ -77,8 +79,8 @@ app.register_blueprint(section_api)
 app.register_blueprint(nestPost_api)
 app.register_blueprint(nestImg_api)
 app.register_blueprint(vote_api)
-#app.register_blueprint(flashcard_api)
-#pp.register_blueprint(flashcard_import_api)
+app.register_blueprint(flashcard_api)
+app.register_blueprint(flashcard_import_api)
 app.register_blueprint(studylog_api)
 app.register_blueprint(gradelog_api)
 app.register_blueprint(profile_api)
@@ -232,6 +234,8 @@ def generate_data():
     initUsers()
     initSections()
     initGroups()
+    initFlashcards()
+    initDecks()
     # initChannels()
     # initPosts()
     initDecks()
@@ -257,10 +261,12 @@ def extract_data():
         data['sections'] = [section.read() for section in Section.query.all()]
         data['gradelog'] = [log.read() for log in GradeLog.query.all()]
         data['groups'] = [group.read() for group in Group.query.all()]
+        data['decks'] = [deck.read() for deck in Deck.query.all()]
 #        data['channels'] = [channel.read() for channel in Channel.query.all()]
     #    data['posts'] = [post.read() for post in Post.query.all()]
         data['studylogs'] = [log.read() for log in StudyLog.query.all()]
         data['profiles'] = [log.read() for log in Profile.query.all()]
+        data['flashcards'] = [log.read() for log in Flashcard.query.all()]
         data['chatlog'] = [log.read() for log in ChatLog.query.all()]
             
 
@@ -276,7 +282,7 @@ def save_data_to_json(data, directory='backup'):
 
 def load_data_from_json(directory='backup'):
     data = {}
-    for table in ['users', 'sections', 'groups', 'gradelog', 'studylogs', 'profiles']:
+    for table in ['users', 'sections', 'groups', 'gradelog', 'studylogs', 'profiles', 'flashcards', 'decks']:
         with open(os.path.join(directory, f'{table}.json'), 'r') as f:
             data[table] = json.load(f)
     return data
@@ -286,12 +292,13 @@ def restore_data(data):
         users = User.restore(data['users'])
         _ = Section.restore(data['sections'])
         _ = Group.restore(data['groups'], users)
- #       _ = Channel.restore(data['channels'])
-    #    _ = Post.restore(data['posts'])
+        _ = Deck.restore(data['decks'])
+        # _ = Channel.restore(data['channels'])
+        #  _ = Post.restore(data['posts'])
         _ = StudyLog.restore(data['studylogs'])
         _ = GradeLog.restore(data['gradelog'])
         _ = Profile.restore(data['profiles'])
-        _ = ChatLog.restore(data['chatlog'])
+        _ = Flashcard.restore(data['flashcards'])
 
     print("Data restored to the new database.")
 
@@ -554,6 +561,8 @@ if __name__ == "__main__":
             if not Deck.query.first():  # Initialize decks only if none exist
                 initDecks()
             remove_duplicates()
+            if not Deck.query.first(): # Initialize chat logs only if none exist
+                initChatLogs
     app.run(debug=True, host="0.0.0.0", port="8887")
 
 
