@@ -126,29 +126,40 @@ class Group(db.Model):
         return self
         
     @staticmethod
-    def restore(data, users):
-        groups = {}
+    def restore(data, users_by_id):
+        """
+        Restore groups from a list of data.
+
+        Args:
+            data (list): A list of dictionaries containing group data.
+            users_by_id (dict): A dictionary mapping user IDs to User objects.
+        """
+        restored_groups = {}
+        
         for group_data in data:
-            _ = group_data.pop('id', None)  # Remove 'id' from group_data
-            name = group_data.get("name", None)
-            group = Group.query.filter_by(_name=name).first()
+            # Remove the 'id' field from group_data to avoid conflicts
+            _ = group_data.pop('id', None)
+            
+            # Extract and remove the moderators field from group_data
+            moderator_ids = group_data.pop('moderators', [])
+            
+            # Find or create the group
+            group = Group.query.filter_by(_name=group_data.get("name")).first()
             if group:
                 group.update(group_data)
             else:
                 group = Group(**group_data)
-                group.create() 
+                group.create()
+            
+            # Handle the moderators relationship
+            if moderator_ids:
+                group.moderators = [users_by_id.get(moderator_id) for moderator_id in moderator_ids if users_by_id.get(moderator_id)]
+            
+            db.session.commit()
+            restored_groups[group.name] = group
+        
+        return restored_groups
 
-        # Restore moderators relationship (TBD)
-        """
-        for group_data in data:
-            group = groups[group_data['name']]
-            if 'moderators' in group_data:
-                for moderator_id in group_data['moderators']:
-                    moderator = users[moderator_id]
-                    group.moderators.append(moderator)
-        db.session.commit()
-        """
-        return groups
             
 def initGroups():
     """
