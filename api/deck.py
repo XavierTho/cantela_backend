@@ -68,10 +68,12 @@ def delete_deck(deck_id):
         return jsonify({'error': str(e)}), 500
 
 
-@deck_api.route('/deck/<int:deck_id>', methods=['PUT'])
+@deck_api.route('/<int:deck_id>', methods=['PUT'])
+@token_required() 
 def update_deck(deck_id):
     """Update the title of a specific deck."""
     data = request.get_json()
+    
     if not data or 'title' not in data:
         return jsonify({'error': 'Deck title is required'}), 400
 
@@ -82,4 +84,3 @@ def update_deck(deck_id):
     deck.title = data['title']  # Update the deck title
     db.session.commit()  # Save changes to the database
     return jsonify(deck.read()), 200
-
