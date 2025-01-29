@@ -558,7 +558,7 @@ if __name__ == "__main__":
             if not Deck.query.first():  # Initialize decks only if none exist
                 initDecks()
             remove_duplicates()
-            if not Deck.query.first(): # Initialize chat logs only if none exist
+            if not ChatLog.query.first(): # Initialize chat logs only if none exist
                 initChatLogs
     app.run(debug=True, host="0.0.0.0", port="8887")
 
