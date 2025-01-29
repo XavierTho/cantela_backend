@@ -2,19 +2,6 @@
 import logging
 from sqlite3 import IntegrityError
 from __init__ import app, db
-import logging
-from sqlalchemy.exc import SQLAlchemyError
-from flask_sqlalchemy import SQLAlchemy
-
-db = SQLAlchemy()
-
-class Response(db.Model):
-    __tablename__ = 'responses'
-    
-    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    message = db.Column(db.String(2000), nullable=False)
-    session_id = db.Column(db.String(100), nullable=False)  # Associate response with a chat session
-
 class ChatLog(db.Model):
     __tablename__ = 'chat_logs'
     id = db.Column(db.Integer, primary_key=True)
@@ -75,7 +62,6 @@ class ChatLog(db.Model):
             logging.warning(f"IntegrityError: Could not update chat log with ID '{self.id}'.")
             return None
         return self
-
     @staticmethod
     def restore(data):
         """
@@ -98,69 +84,15 @@ class ChatLog(db.Model):
         return chat_logs
 @staticmethod
 def restore(chat_data):
-    restored_count = 0
-    updated_count = 0
-    failed_count = 0
-    failed_entries = []
-
-    if not isinstance(chat_data, list):
-        logging.error("Invalid chat data format: Expected a list.")
-        return {'message': 'Invalid data format', 'status': 'error'}
-
-    try:
-        chat_logs_to_add = []
-        
-        for log_entry in chat_data:
-            _ = log_entry.pop('id', None)  # Remove 'id' to avoid conflicts
-            session_id = log_entry.get("session_id")
-
-            if not session_id:
-                logging.warning("Missing session_id in chat log entry: %s", log_entry)
-                failed_count += 1
-                failed_entries.append(log_entry)
-                continue
-
-            chatlog = ChatLog.query.filter_by(session_id=session_id).first()
-
-            if chatlog:
-                try:
-                    chatlog.update(log_entry)
-                    updated_count += 1
-                except Exception as e:
-                    logging.error(f"Failed to update chat log {session_id}: {e}")
-                    failed_count += 1
-                    failed_entries.append(log_entry)
-            else:
-                try:
-                    chatlog = ChatLog(**log_entry)
-                    chat_logs_to_add.append(chatlog)
-                    restored_count += 1
-                except Exception as e:
-                    logging.error(f"Failed to create chat log {session_id}: {e}")
-                    failed_count += 1
-                    failed_entries.append(log_entry)
-
-        if chat_logs_to_add:
-            db.session.add_all(chat_logs_to_add)
-            db.session.commit()
-
-    except SQLAlchemyError as e:
-        db.session.rollback()
-        logging.error(f"Database error during restore operation: {e}")
-        return {'message': 'Database error occurred', 'status': 'error'}
-
-    return {
-        'message': 'Chat logs restored successfully',
-        'restored': restored_count,
-        'updated': updated_count,
-        'failed': failed_count,
-        'failed_entries': failed_entries if failed_count > 0 else None,
-        'status': 'success'
-    }
-
-
-    
-    
+    for log_entry in chat_data:
+        _ = log_entry.pop('id', None)  # Remove 'id' to avoid conflicts
+        session_id = log_entry.get("session_id")
+        chatlog = ChatLog.query.filter_by(session_id=session_id).first()
+        if chatlog:
+            chatlog.update(log_entry)
+        else:
+            chatlog = ChatLog(**log_entry)
+            chatlog.create()
 def initChatLogs():
     """
     Initialize the database with example chat logs for testing.
@@ -181,9 +113,3 @@ if __name__ == "__main__":
     with app.app_context():
         db.create_all()
         print("Table creation complete.")
-                
-                
-
-
-
-
