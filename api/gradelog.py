@@ -86,6 +86,21 @@ class GradelogAPI:
             except Exception as e:
                 return {"message": f"An error occurred: {str(e)}"}, 500
 
+    class _All(Resource):
+        @token_required()
+        def get(self):
+            """Get all grade entries for all users."""
+            grade_logs = GradeLog.query.all()
+            logs = [{
+                'id': log.id,
+                'user_id': log.user_id,
+                'subject': log.subject,
+                'grade': log.grade,
+                'notes': log.notes,
+                'date': log.date.strftime('%Y-%m-%d')
+            } for log in grade_logs]
+            return logs, 200
 
-# Register the resource
+# Register the resources
 api.add_resource(GradelogAPI._CRUD, '/gradelog')
+api.add_resource(GradelogAPI._All, '/gradelog/all')
