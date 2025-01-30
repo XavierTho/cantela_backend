@@ -58,6 +58,18 @@ class GradelogAPI:
             return updated_log.read(), 200
 
         @token_required()
+        def patch(self):
+            """Partially update an existing grade log."""
+            data = request.get_json()
+            if not data or 'id' not in data:
+                return {"message": "Grade Log ID is required"}, 400
+            grade_log = GradeLog.query.get(data['id'])
+            if not grade_log or grade_log.user_id != g.current_user.id:
+                return {"message": "Grade Log not found or unauthorized"}, 404
+            updated_log = grade_log.update(data)
+            return updated_log.read(), 200
+
+        @token_required()
         def delete(self):
             """Delete a grade log."""
             grade_log_id = request.args.get('id')
