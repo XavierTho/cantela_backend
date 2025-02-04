@@ -532,15 +532,15 @@ def get_leaderboard():
     return jsonify(sorted_leaderboard), 200  # Send the sorted leaderboard as JSON with HTTP 200.
 
 
-def remove_duplicates():
-    with app.app_context():
-        seen_names = set()
-        for profile in Profile.query.all():
-            if profile.name in seen_names:
-                db.session.delete(profile)
-            else:
-                seen_names.add(profile.name)
-        db.session.commit()
+# def remove_duplicates():
+#     with app.app_context():
+#         seen_names = set()
+#         for profile in Profile.query.all():
+#             if profile.name in seen_names:
+#                 db.session.delete(profile)
+#             else:
+#                 seen_names.add(profile.name)
+#         db.session.commit()
 
 
 if __name__ == "__main__":
@@ -557,7 +557,7 @@ if __name__ == "__main__":
                 initProfiles()
             if not Deck.query.first():  # Initialize decks only if none exist
                 initDecks()
-            remove_duplicates()
+            # remove_duplicates()
             if not ChatLog.query.first(): # Initialize chat logs only if none exist
                 initChatLogs
     app.run(debug=True, host="0.0.0.0", port="8223")
