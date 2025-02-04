@@ -560,7 +560,7 @@ if __name__ == "__main__":
             remove_duplicates()
             if not ChatLog.query.first(): # Initialize chat logs only if none exist
                 initChatLogs
-    app.run(debug=True, host="0.0.0.0", port="8223")
+    app.run(debug=True, host="0.0.0.0", port="8202")
 
 
 
