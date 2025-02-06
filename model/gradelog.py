@@ -2,7 +2,6 @@ from sqlalchemy.exc import IntegrityError
 from __init__ import app, db
 from model.user import User
 from datetime import datetime
-import logging
 
 class GradeLog(db.Model):
     """
@@ -92,48 +91,29 @@ class GradeLog(db.Model):
     @staticmethod
     def restore(data):
         """
-        Restores GradeLog data from a list of dictionaries (e.g., JSON backup).
-        Skips certain entries or invalid data. Ensures valid fields exist before 
-        creating new records or updates. Handles errors and logs warnings.
+        Restore GradeLog instances from a list of dictionaries.
         
         Args:
-            data (list): A list of dictionaries containing grade log data.
+            data (list): A list of dictionaries containing the data for GradeLog instances.
         """
         for log_data in data:
-            # Skip logs with IDs 1, 2, or 3
-            if log_data.get('id') in [1, 2, 3]:
-                logging.info(f"Skipping log with id {log_data['id']}")
-                continue
+            _ = log_data.pop('id', None)
+            id = log_data.get("id", None)
+            user_id = log_data.get("user_id", None)
+            subject = log_data.get("subject", None)
+            grade = log_data.get("grade", None)
+            notes = log_data.get("notes", None)
+            date_str = log_data.get("date", None)
+            date = datetime.strptime(date_str, '%Y-%m-%d %H:%M:%S') if date_str else None
 
-            # Remove 'id' to allow DB to auto-generate an ID
-            log_data.pop('id', None)
-
-            # Convert date string to datetime object if present
-            date_str = log_data.get("date")
-            if date_str:
-                try:
-                    log_data["date"] = datetime.strptime(date_str, '%Y-%m-%d %H:%M:%S')
-                except ValueError:
-                    logging.warning(f"Invalid date format for '{date_str}'. Skipping log.")
-                    continue  # skip invalid entries
-
-            # Check for required fields (user_id, subject, grade)
-            required_fields = ["user_id", "subject", "grade"]
-            if not all(field in log_data and log_data[field] for field in required_fields):
-                logging.warning(f"Missing required fields in log data: {log_data}. Skipping log.")
-                continue
-
-            # Create and insert new GradeLog record
-            try:
-                new_gradelog = GradeLog(**log_data)
-                db.session.add(new_gradelog)
-                db.session.commit()
-            except IntegrityError as e:
-                db.session.rollback()
-                logging.warning(f"IntegrityError: Could not restore log due to {str(e)}.")
-            except Exception as e:
-                db.session.rollback()
-                logging.warning(f"Error restoring log: {str(e)}.")
+            gradelog = GradeLog.query.filter_by(id=id, user_id=user_id, subject=subject, grade=grade, notes=notes, date=date).first()
+            if gradelog:
+                gradelog.update(log_data)
+            else:
+                gradelog = GradeLog(user_id=user_id, subject=subject, grade=grade, notes=notes)
+                if date:
+                    gradelog.date = date
+                gradelog.create()
 
 def initGradeLog():
     with app.app_context():
