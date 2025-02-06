@@ -1,9 +1,9 @@
 server {
     listen 80;
     listen [::]:80;
-    server_name cantella.stu.nighthawkcodingsociety.com ; # Change server name to the one on R53
+    server_name cantella.stu.nighthawkcodingsociety.com ;
     location / { 
-       proxy_pass https://localhost:8051;
+       proxy_pass https://localhost:8202;
         if ($request_method = OPTIONS ) {
                 add_header "Access-Control-Allow-Credentials" "true" always;
                 add_header "Access-Control-Allow-Origin"  "https://xaviertho.github.io" always;
