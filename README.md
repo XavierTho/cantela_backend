@@ -10,7 +10,7 @@
 - Contains capabilities for deployment and has been used with AWS, Ubuntu, Docker, docker-compose, and Nginx to `deploy a WSGI server`.
 - Contains APIs to support `user authentication and cookies`, a great deal of which was contributed by Aiden Wu a former student in CSP.  
 
-## Flask Portfolio Starter
+## Flask Portfolio Starters
 
 Use this project to create a Flask Server.
 
