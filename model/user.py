@@ -9,11 +9,6 @@ import json
 
 from __init__ import app, db
 
-""" Association Table for User and Classes """
-user_classes = db.Table('user_classes',
-    db.Column('user_id', db.Integer, db.ForeignKey('users.id'), primary_key=True),
-    db.Column('class_id', db.Integer, db.ForeignKey('classes.id'), primary_key=True)
-)
 
 """ Helper Functions """
 
