@@ -1,19 +1,13 @@
 # user.py
 from flask import current_app
 from flask_login import UserMixin
-from datetime import date, datetime
+from datetime import date
 from sqlalchemy.exc import IntegrityError
 from werkzeug.security import generate_password_hash, check_password_hash
 import os
 import json
 
 from __init__ import app, db
-
-""" Association Table for User and Classes """
-user_classes = db.Table('user_classes',
-    db.Column('user_id', db.Integer, db.ForeignKey('users.id'), primary_key=True),
-    db.Column('class_id', db.Integer, db.ForeignKey('classes.id'), primary_key=True)
-)
 
 """ Helper Functions """
 
@@ -32,33 +26,6 @@ def default_year():
     if 7 <= current_month <= 12:
         current_year += 1
     return current_year 
-
-""" Class Model """
-
-class Class(db.Model):
-    """
-    Class Model
-
-    Represents a class that users can join or leave.
-
-    Attributes:
-        __tablename__ (str): Name of the database table.
-        id (Column): The primary key for the class.
-        name (Column): Unique name of the class.
-        description (Column): Description of the class.
-    """
-    __tablename__ = 'classes'
-
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(255), unique=True, nullable=False)
-    description = db.Column(db.String(255), nullable=True)
-
-    def __init__(self, name, description=""):
-        self.name = name
-        self.description = description
-
-    def __repr__(self):
-        return f"<Class {self.name}>"
 
 """ Database Models """
 
@@ -91,13 +58,12 @@ class User(db.Model, UserMixin):
     _password = db.Column(db.String(255), unique=False, nullable=False)
     _role = db.Column(db.String(20), default="User", nullable=False)
     _pfp = db.Column(db.String(255), unique=False, nullable=True)
-
-    # Many-to-Many Relationship with Classes
-    joined_classes = db.relationship('Class', secondary=user_classes, backref='students', lazy='dynamic')
-
+    _car = db.Column(db.String(255), unique=False, nullable=True)
+   
     posts = db.relationship('Post', backref='author', lazy=True)
-
-    def __init__(self, name, uid, password="", role="User", pfp='', email='?'):
+                                 
+    
+    def __init__(self, name, uid, password="", role="User", pfp='', car='', email='?'):
         """
         Constructor, 1st step in object creation.
         
@@ -114,6 +80,7 @@ class User(db.Model, UserMixin):
         self.set_password(password)
         self._role = role
         self._pfp = pfp
+        self._car = car
 
     # UserMixin/Flask-Login requires a get_id method to return the id as a string
     def get_id(self):
@@ -157,8 +124,7 @@ class User(db.Model, UserMixin):
             bool: True if the user is anonymous, False otherwise.
         """
         return False
-
-    # Properties and Setters
+    
     @property
     def email(self):
         """
@@ -331,24 +297,12 @@ class User(db.Model, UserMixin):
         """
         self._pfp = pfp
 
-    # Class management methods
-    def join_class(self, class_instance):
-        if not self.is_in_class(class_instance):
-            self.joined_classes.append(class_instance)
-            db.session.commit()
-
-    def leave_class(self, class_instance):
-        if self.is_in_class(class_instance):
-            self.joined_classes.remove(class_instance)
-            db.session.commit()
-
-    def is_in_class(self, class_instance):
-        return self.joined_classes.filter(user_classes.c.class_id == class_instance.id).count() > 0
-
-    def get_classes(self):
-        return [cls.name for cls in self.joined_classes.all()]
-
-    # CRUD methods
+    @property
+    def car(self):
+        return self._car
+    @car.setter
+    def car(self, car):
+        self._car = car
     def create(self, inputs=None):
         """
         Adds a new record to the table and commits the transaction.
@@ -382,7 +336,8 @@ class User(db.Model, UserMixin):
             "name": self.name,
             "email": self.email,
             "role": self._role,
-            "joined_classes": self.get_classes()
+            "pfp": self._pfp,
+            "car": self._car
         }
         return data
         
@@ -464,6 +419,32 @@ class User(db.Model, UserMixin):
         self.pfp = None
         db.session.commit()
         
+    def save_car(self, image_data, filename):
+        """
+        Saves the user's car picture.
+        
+        Args:
+            image_data (bytes): The image data of the car picture.
+            filename (str): The filename of the car picture.
+        """
+        try:
+            user_dir = os.path.join(app.config['UPLOAD_FOLDER'], self.uid)
+            if not os.path.exists(user_dir):
+                os.makedirs(user_dir)
+            file_path = os.path.join(user_dir, filename)
+            with open(file_path, 'wb') as img_file:
+                img_file.write(image_data)
+            self.update({"car": filename})
+        except Exception as e:
+            raise e
+        
+    def delete_car(self):
+        """
+        Deletes the user's profile picture from the user record.
+        """
+        self.car = None
+        db.session.commit()
+        
     def set_uid(self, new_uid=None):
         """
         Updates the user's directory based on the new UID provided.
@@ -524,9 +505,9 @@ def initUsers():
         db.create_all()
         """Tester data for table"""
         
-        u1 = User(name='Thomas Edison', uid=app.config['ADMIN_USER'], password=app.config['ADMIN_PASSWORD'], pfp='toby.png', role="Admin")
+        u1 = User(name='Thomas Edison', uid=app.config['ADMIN_USER'], password=app.config['ADMIN_PASSWORD'], pfp='toby.png', car='toby_car.png', role="Admin")
         u2 = User(name='Grace Hopper', uid=app.config['DEFAULT_USER'], password=app.config['DEFAULT_PASSWORD'], pfp='hop.png')
-        u3 = User(name='Nicholas Tesla', uid='niko', password='123niko', pfp='niko.png')
+        u3 = User(name='Nicholas Tesla', uid='niko', password='123niko', pfp='niko.png' )
         u4 = User(name='Xavier Thompson', uid="xat", password='123xat', pfp='xat.png', role='Admin')
         u5 = User(name='Armaghan Zarak', uid="az", password='123', pfp='niko.png', role='Admin')
         users = [u1, u2, u3, u4, u5]
