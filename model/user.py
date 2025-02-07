@@ -34,12 +34,10 @@ def default_year():
 class User(db.Model, UserMixin):
     """
     User Model
-
     This class represents the User model, which is used to manage actions in the 'users' table of the database. It is an
     implementation of Object Relational Mapping (ORM) using SQLAlchemy, allowing for easy interaction with the database
     using Python code. The User model includes various fields and methods to support user management, authentication,
     and profile management functionalities.
-
     Attributes:
         __tablename__ (str): Specifies the name of the table in the database.
         id (Column): The primary key, an integer representing the unique identifier for the user.
@@ -448,7 +446,6 @@ class User(db.Model, UserMixin):
     def set_uid(self, new_uid=None):
         """
         Updates the user's directory based on the new UID provided.
-
         Args:
             new_uid (str, optional): The new UID to update the user's directory.
         
