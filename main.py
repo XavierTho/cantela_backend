@@ -47,7 +47,7 @@ from api.leaderboard import leaderboard_api
 
 
 # database Initialization functions
-from model.user import gradelog, User, initUsers
+from model.user import User, initUsers
 from model.section import Section, initSections
 from model.group import Group, initGroups
 from model.channel import Channel, initChannels
